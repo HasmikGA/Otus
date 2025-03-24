@@ -1,13 +1,51 @@
 ﻿using System;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Homework
 {
+    class DuplicateTaskException : Exception
+    {
+
+        public DuplicateTaskException(string task) : base($"The task \"{task}\"already exists") { }
+    }
+    class TaskLengthLimitException : Exception
+    {
+        public TaskLengthLimitException(int taskLength, int taskLengthLimit)
+            : base($"The length of the task {taskLength} axceeds the max allowed length {taskLengthLimit} ") { }
+    }
+    class TaskCountLimitException : Exception
+    {
+        public TaskCountLimitException(int taskCountLimit) : base($"The max number of tasks has been exceeded: {taskCountLimit} ") { }
+    }
     internal class Program
     {
         static void Main(string[] args)
         {
-
-            ProcessCommands();
+            try
+            {
+                ProcessCommands();
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            catch (TaskCountLimitException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            catch (TaskLengthLimitException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            catch (DuplicateTaskException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Something went wrong: {ex.GetType}, {ex.Message}, {ex.StackTrace}, {ex.InnerException}");
+            }
 
             Console.ReadKey();
         }
@@ -16,6 +54,8 @@ namespace Homework
         {
             Console.Write("Hi! There are the commands:");
             string commands = "start, help, info, addtask, removetask, showtasks, exit.";
+            int taskCountLimit = 0;
+            int taskLengthLimit = 0;
             string name = string.Empty;
             List<string> taskList = new List<string>();
 
@@ -42,7 +82,19 @@ namespace Homework
                         commands = "help, info, echo, exit";
                         break;
                     case "addtask":
-                        AddTask(taskList);
+                        if (taskCountLimit == 0)
+                        {
+                            Console.Write("Enter the maximum number of tasks allowed:");
+                            string numCount = Console.ReadLine();
+                            taskCountLimit = ParseAndValidateInt(numCount);
+                        }
+                        if (taskLengthLimit == 0)
+                        {
+                            Console.Write("Enter the maximum allowed task length");
+                            string numLength = Console.ReadLine();
+                            taskLengthLimit = ParseAndValidateInt(numLength);
+                        }
+                        AddTask(taskList, taskCountLimit, taskLengthLimit);
                         break;
                     case "showtasks":
                         ShowTasks(taskList);
@@ -106,10 +158,33 @@ namespace Homework
                 Console.WriteLine($"{i + 1}. {taskList[i]}");
             }
         }
-        static void AddTask(List<string> taskList)
+        static void AddTask(List<string> taskList, int taskCountLimit, int taskLengthLimit)
         {
+            if (taskList.Count >= taskCountLimit)
+            {
+                throw new TaskCountLimitException(taskCountLimit);
+            }
+
             Console.Write("Please enter a description of the task:");
             string task = Console.ReadLine();
+
+            ValidateString(task);
+
+            if (task.Length > taskLengthLimit)
+            {
+                throw new TaskLengthLimitException(task.Length, taskLengthLimit);
+            }
+
+            for (int i = 0; i < taskList.Count; i++)
+            {
+                if (taskList[i] == task)
+                {
+                    throw new DuplicateTaskException(task);
+                }
+            }
+
+
+
             taskList.Add(task);
             Console.WriteLine($"The task \"{task}\" has been added. ");
 
@@ -143,6 +218,25 @@ namespace Homework
                     Console.WriteLine("Wrong number!");
                     continue;
                 }
+            }
+        }
+
+        static int ParseAndValidateInt(string? str, int min = 1, int max = 100)
+        {
+            bool isNumCount = int.TryParse(str, out int numCount);
+            if (!isNumCount || numCount <= min || numCount >= max)
+            {
+                throw new ArgumentException();
+            }
+            return numCount;
+        }
+        static void ValidateString(string? str)
+        {
+            bool containsSpecialChars = Regex.IsMatch(str, @"[!@#$%^&*(),.?""':;{}|<>]");
+
+            if (string.IsNullOrEmpty(str) || containsSpecialChars)
+            {
+                throw new ArgumentException();
             }
         }
         static void Exit()
