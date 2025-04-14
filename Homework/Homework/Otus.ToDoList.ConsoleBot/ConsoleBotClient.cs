@@ -36,7 +36,7 @@ public class ConsoleBotClient : ITelegramBotClient
 
         try
         {
-            WriteLineColor("Бот запущен. Введите сообщение", ConsoleColor.Magenta);
+            WriteLineColor($"Бот запущен. Введите сообщение:", ConsoleColor.Magenta);
             var counter = 0;
 
             while (cts.IsCancellationRequested is false)
