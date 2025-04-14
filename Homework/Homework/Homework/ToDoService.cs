@@ -12,15 +12,27 @@ namespace TaskBot
 {
     internal class ToDoService : IToDoService
     {
-        private List<ToDoItem> toDoItems = new List<ToDoItem>();
+        private readonly List<ToDoItem> toDoItems = new List<ToDoItem>();
 
-        public int ItemCountLimit { get; set; } = 20;
-        
-        public ToDoItem Add(ToDoUser user, string name) 
+        private int itemCountLimit ;
+        private int itemLengthLimit ;
+
+        public ToDoService(int itemCountLimit, int itemLengthLimit)
         {
-            if(toDoItems.Count > this.ItemCountLimit)
+            this.itemCountLimit=itemCountLimit;
+            this.itemLengthLimit=itemLengthLimit;
+        }
+
+
+        public ToDoItem Add(ToDoUser user, string name)
+        {
+            if (toDoItems.Count > this.itemCountLimit)
             {
-                throw new TaskCountLimitException(ItemCountLimit);
+                throw new TaskCountLimitException(itemCountLimit);
+            }
+            if (name.Length > itemLengthLimit)
+            {
+                throw new TaskLengthLimitException(name.Length, itemLengthLimit);
             }
 
             for (int i = 0; i < toDoItems.Count; i++)
@@ -33,7 +45,6 @@ namespace TaskBot
 
             this.ValidateString(name);
 
-            
 
             ToDoItem toDoItem = new ToDoItem()
             {
@@ -77,7 +88,7 @@ namespace TaskBot
             List<ToDoItem> allList = new List<ToDoItem>();
             for (int i = 0; i < toDoItems.Count; i++)
             {
-                if (toDoItems[i].Id == userId )
+                if (toDoItems[i].Id == userId)
                 {
                     allList.Add(toDoItems[i]);
                 }
@@ -101,9 +112,9 @@ namespace TaskBot
 
             if (string.IsNullOrEmpty(taskName) || containsSpecialChars)
             {
-                throw new ArgumentException();
+                throw new ArgumentException("The task isn`t in correct form");
             }
         }
-       
+
     }
 }

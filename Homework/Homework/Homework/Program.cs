@@ -13,11 +13,11 @@ namespace Homework
         static void Main(string[] args)
         {
             var telegramBotClinet = new ConsoleBotClient();
-            var updateHandler = new UpdateHandler(new UserService(), new ToDoService());
+            var updateHandler = new UpdateHandler(new UserService(), new ToDoService(20,100));
 
             try
             {
-                telegramBotClinet.StartReceiving(updateHandler, "start, help, info, addtask, removetask, showtasks, showalltask, completetask, exit.");
+                telegramBotClinet.StartReceiving(updateHandler);
             }
             catch (Exception ex)
             {

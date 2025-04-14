@@ -22,7 +22,7 @@ public class ConsoleBotClient : ITelegramBotClient
         WriteLineColor($"Бот: {text}", ConsoleColor.Blue);
     }
 
-    public void StartReceiving(IUpdateHandler handler, string initialCommands)
+    public void StartReceiving(IUpdateHandler handler)
     {
         ArgumentNullException.ThrowIfNull(handler, nameof(handler));
 
@@ -36,7 +36,7 @@ public class ConsoleBotClient : ITelegramBotClient
 
         try
         {
-            WriteLineColor($"Бот запущен. Введите сообщение: {initialCommands}", ConsoleColor.Magenta);
+            WriteLineColor($"Бот запущен. Введите сообщение:", ConsoleColor.Magenta);
             var counter = 0;
 
             while (cts.IsCancellationRequested is false)
