@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TaskBot.Exceptions;
 
-namespace TaskBot
+
+namespace TaskBot.Core.Entities
 {
     internal class ToDoItem
     {
@@ -16,7 +16,7 @@ namespace TaskBot
         public DateTime CreatedAt { get; set; }
         public ToDoItemState State { get; set; }
         public DateTime? StateChangedAt { get; set; }
-       
+
 
 
     }

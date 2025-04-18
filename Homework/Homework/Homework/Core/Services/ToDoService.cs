@@ -6,27 +6,33 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using TaskBot.Exceptions;
+using TaskBot.Core.DataAccess;
+using TaskBot.Core.Entities;
+using TaskBot.Core.Exceptions;
 
-namespace TaskBot
+
+namespace TaskBot.Core.Services
 {
     internal class ToDoService : IToDoService
     {
         private readonly List<ToDoItem> toDoItems = new List<ToDoItem>();
 
-        private int itemCountLimit ;
-        private int itemLengthLimit ;
+        private int itemCountLimit;
+        private int itemLengthLimit;
+        private readonly IToDoRepository toDoRepository;
 
-        public ToDoService(int itemCountLimit, int itemLengthLimit)
+
+        public ToDoService(int itemCountLimit, int itemLengthLimit, IToDoRepository toDoRepository)
         {
-            this.itemCountLimit=itemCountLimit;
-            this.itemLengthLimit=itemLengthLimit;
+            this.itemCountLimit = itemCountLimit;
+            this.itemLengthLimit = itemLengthLimit;
+            this.toDoRepository = toDoRepository;
         }
 
 
         public ToDoItem Add(ToDoUser user, string name)
         {
-            if (toDoItems.Count > this.itemCountLimit)
+            if (toDoItems.Count > itemCountLimit)
             {
                 throw new TaskCountLimitException(itemCountLimit);
             }
@@ -43,7 +49,7 @@ namespace TaskBot
                 }
             }
 
-            this.ValidateString(name);
+            ValidateString(name);
 
 
             ToDoItem toDoItem = new ToDoItem()
@@ -55,7 +61,7 @@ namespace TaskBot
                 State = ToDoItemState.Active,
             };
 
-            toDoItems.Add(toDoItem);
+            toDoRepository.Add(toDoItem);
 
             return toDoItem;
         }
@@ -67,32 +73,21 @@ namespace TaskBot
                 if (toDoItems[i].Id == id)
                 {
                     toDoItems.RemoveAt(i);
+                    break;
                 }
             }
 
         }
         public IReadOnlyList<ToDoItem> GetActiveByUserId(Guid userId)
         {
-            List<ToDoItem> activetList = new List<ToDoItem>();
-            for (int i = 0; i < toDoItems.Count; i++)
-            {
-                if (toDoItems[i].Id == userId && toDoItems[i].State == ToDoItemState.Active)
-                {
-                    activetList.Add(toDoItems[i]);
-                }
-            }
-            return activetList;
+            var activeList = toDoRepository.GetActiveByUserId(userId);
+
+            return activeList;
         }
-        public IReadOnlyList<ToDoItem> GetByUserId(Guid userId)
+        public IReadOnlyList<ToDoItem> GetAllByUserId(Guid userId)
         {
-            List<ToDoItem> allList = new List<ToDoItem>();
-            for (int i = 0; i < toDoItems.Count; i++)
-            {
-                if (toDoItems[i].Id == userId)
-                {
-                    allList.Add(toDoItems[i]);
-                }
-            }
+            var allList = toDoRepository.GetAllByUserId(userId);
+
             return allList;
         }
 
@@ -103,6 +98,7 @@ namespace TaskBot
                 if (toDoItems[i].Id == id)
                 {
                     toDoItems[i].State = ToDoItemState.Completed;
+                    break;
                 }
             }
         }
@@ -116,5 +112,10 @@ namespace TaskBot
             }
         }
 
+        public IReadOnlyList<ToDoItem> Find(ToDoUser user, string namePrefix)
+        {
+            var result = toDoRepository.Find(user.UserId, (item) => item.Name.StartsWith(namePrefix));
+            return result;
+        }
     }
 }
