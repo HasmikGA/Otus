@@ -1,4 +1,4 @@
-﻿namespace TaskBot
+﻿namespace TaskBot.Core.Entities
 {
     internal class ToDoUser
     {

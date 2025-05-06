@@ -1,20 +1,21 @@
-﻿namespace TaskBot
+﻿using TaskBot.Core.DataAccess;
+using TaskBot.Core.Entities;
+
+namespace TaskBot.Core.Services
 {
     internal class UserService : IUserService
     {
         private readonly List<ToDoUser> users = new List<ToDoUser>();
+        private readonly IUserRepository userRepository;
 
+        public UserService(IUserRepository userRepository)
+        {
+            this.userRepository = userRepository;
+        }
         public ToDoUser? GetUser(long telegramUserId)
         {
-            for (int i = 0; i < this.users.Count; i++)
-            {
-                if (this.users[i].TelegramUserId == telegramUserId)
-                {
-                    return this.users[i];
-                }
-            }
-
-            return null;
+            var user = userRepository.GetUserByTelegramUserId(telegramUserId);
+            return user;    
         }
 
         public ToDoUser RegisterUser(long telegramUserId, string telegramUserName)
@@ -27,7 +28,7 @@
                 RegisteredAt = DateTime.Now,
             };
 
-            this.users.Add(user);
+            userRepository.Add(user);
 
             return user;
         }

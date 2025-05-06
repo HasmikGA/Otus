@@ -1,4 +1,4 @@
-﻿namespace TaskBot.Exceptions
+﻿namespace TaskBot.Core.Exceptions
 {
     class TaskCountLimitException : Exception
     {
