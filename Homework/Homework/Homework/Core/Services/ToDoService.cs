@@ -30,7 +30,7 @@ namespace TaskBot.Core.Services
         }
 
 
-        public ToDoItem Add(ToDoUser user, string name)
+        public async Task<ToDoItem> Add(ToDoUser user, string name, CancellationToken ct)
         {
             if (toDoItems.Count > itemCountLimit)
             {
@@ -61,12 +61,12 @@ namespace TaskBot.Core.Services
                 State = ToDoItemState.Active,
             };
 
-            toDoRepository.Add(toDoItem);
+            await toDoRepository.Add(toDoItem, ct);
 
             return toDoItem;
         }
 
-        public void Delete(Guid id)
+        public async Task Delete(Guid id, CancellationToken ct)
         {
             for (int i = 0; i < toDoItems.Count; i++)
             {
@@ -78,20 +78,20 @@ namespace TaskBot.Core.Services
             }
 
         }
-        public IReadOnlyList<ToDoItem> GetActiveByUserId(Guid userId)
+        public async Task<IReadOnlyList<ToDoItem>> GetActiveByUserId(Guid userId, CancellationToken ct)
         {
-            var activeList = toDoRepository.GetActiveByUserId(userId);
+            var activeList = await toDoRepository.GetActiveByUserId(userId, ct);
 
             return activeList;
         }
-        public IReadOnlyList<ToDoItem> GetAllByUserId(Guid userId)
+        public async Task<IReadOnlyList<ToDoItem>> GetAllByUserId(Guid userId, CancellationToken ct)
         {
-            var allList = toDoRepository.GetAllByUserId(userId);
+            var allList = await toDoRepository.GetAllByUserId(userId, ct);
 
             return allList;
         }
 
-        public void MarkCompleted(Guid id)
+        public async Task MarkCompleted(Guid id, CancellationToken ct)
         {
             for (int i = 0; i < toDoItems.Count; i++)
             {
@@ -112,9 +112,9 @@ namespace TaskBot.Core.Services
             }
         }
 
-        public IReadOnlyList<ToDoItem> Find(ToDoUser user, string namePrefix)
+        public async Task<IReadOnlyList<ToDoItem>> Find(ToDoUser user, string namePrefix, CancellationToken ct)
         {
-            var result = toDoRepository.Find(user.UserId, (item) => item.Name.StartsWith(namePrefix));
+            var result = await toDoRepository.Find(user.UserId, (item) => item.Name.StartsWith(namePrefix), ct);
             return result;
         }
     }

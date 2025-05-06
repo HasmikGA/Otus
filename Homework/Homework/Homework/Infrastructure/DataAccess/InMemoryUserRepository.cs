@@ -12,12 +12,12 @@ namespace TaskBot.Infrastructure.DataAccess
     internal class InMemoryUserRepository : IUserRepository
     {
         private readonly List<ToDoUser> users = new List<ToDoUser>();
-        public void Add(ToDoUser user)
+        public async Task Add(ToDoUser user, CancellationToken ct)
         {
             users.Add(user);
         }
 
-        public ToDoUser? GetUser(Guid userId)
+        public async Task<ToDoUser>? GetUser(Guid userId, CancellationToken ct)
         {
             for (int i = 0; i < users.Count; i++)
             {
@@ -30,7 +30,7 @@ namespace TaskBot.Infrastructure.DataAccess
             return null;
         }
 
-        public ToDoUser? GetUserByTelegramUserId(long telegramUserId)
+        public async Task<ToDoUser>? GetUserByTelegramUserId(long telegramUserId, CancellationToken ct)
         {
             for (int i = 0; i < users.Count; i++)
             {

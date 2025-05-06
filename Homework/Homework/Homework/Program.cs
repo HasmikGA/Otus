@@ -15,37 +15,44 @@ namespace Homework
 {
     internal class Program
     {
-        static void F(int a, int b, Func<int, int, bool> isNumbersEqual)
-        {
-            if (isNumbersEqual(a, b))
-            {
-                Console.WriteLine("1");
-            }
-            else
-            {
-                Console.WriteLine("2");
-            }
 
-        }
         static void Main(string[] args)
         {
-            F(3, 8, (x, y) => x == y);
-
             var telegramBotClinet = new ConsoleBotClient();
             IUserRepository userRepository = new InMemoryUserRepository();
             IToDoRepository toDoRepository = new InMemoryToDoRepository();
             IToDoReportService toDoReportService = new ToDoReportService(toDoRepository);
             var updateHandler = new UpdateHandler(new UserService(userRepository), new ToDoService(20, 100, toDoRepository), new ToDoReportService(toDoRepository));
+            CancellationTokenSource cts = new CancellationTokenSource();
+            CancellationToken token = cts.Token;
 
             try
             {
-                telegramBotClinet.StartReceiving(updateHandler);
+                updateHandler.OnHandleUpdateStarted += OnUpdateStarted;
+                updateHandler.OnHandleUpdateCompleted += OnUpdateCompleted;
+
+                telegramBotClinet.StartReceiving(updateHandler, token);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Something went wrong: {ex.GetType}, {ex.Message}, {ex.StackTrace}, {ex.InnerException}");
             }
+            finally
+            {
+                updateHandler.OnHandleUpdateStarted -= OnUpdateStarted;
+                updateHandler.OnHandleUpdateCompleted -= OnUpdateCompleted;
+            }
+
         }
+        static void OnUpdateStarted(string message)
+        {
+            Console.WriteLine($"Началась обработка сообщения '{message}'");
+        }
+        static void OnUpdateCompleted(string message)
+        {
+            Console.WriteLine($"Закончилась обработка сообщения '{message}'");
+        }
+
 
     }
 }

@@ -12,13 +12,14 @@ namespace TaskBot.Core.Services
         {
             this.userRepository = userRepository;
         }
-        public ToDoUser? GetUser(long telegramUserId)
+
+        async Task<ToDoUser>? IUserService.GetUser(long telegramUserId, CancellationToken ct)
         {
-            var user = userRepository.GetUserByTelegramUserId(telegramUserId);
-            return user;    
+            var user = await userRepository.GetUserByTelegramUserId(telegramUserId, ct);
+            return user;
         }
 
-        public ToDoUser RegisterUser(long telegramUserId, string telegramUserName)
+        async Task<ToDoUser> IUserService.RegisterUser(long telegramUserId, string telegramUserName, CancellationToken ct)
         {
             var user = new ToDoUser
             {
@@ -28,7 +29,7 @@ namespace TaskBot.Core.Services
                 RegisteredAt = DateTime.Now,
             };
 
-            userRepository.Add(user);
+            await userRepository.Add(user, ct);
 
             return user;
         }
@@ -36,3 +37,4 @@ namespace TaskBot.Core.Services
 
 
 }
+
