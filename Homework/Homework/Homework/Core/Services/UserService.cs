@@ -5,7 +5,6 @@ namespace TaskBot.Core.Services
 {
     internal class UserService : IUserService
     {
-        private readonly List<ToDoUser> users = new List<ToDoUser>();
         private readonly IUserRepository userRepository;
 
         public UserService(IUserRepository userRepository)
@@ -13,13 +12,13 @@ namespace TaskBot.Core.Services
             this.userRepository = userRepository;
         }
 
-        async Task<ToDoUser>? IUserService.GetUser(long telegramUserId, CancellationToken ct)
+        public async Task<ToDoUser>? GetUser(long telegramUserId, CancellationToken ct)
         {
-            var user = await userRepository.GetUserByTelegramUserId(telegramUserId, ct);
+            var user = userRepository.GetUserByTelegramUserId(telegramUserId, ct);
             return user;
         }
 
-        async Task<ToDoUser> IUserService.RegisterUser(long telegramUserId, string telegramUserName, CancellationToken ct)
+        public async Task<ToDoUser> RegisterUser(long telegramUserId, string telegramUserName, CancellationToken ct)
         {
             var user = new ToDoUser
             {
@@ -29,7 +28,7 @@ namespace TaskBot.Core.Services
                 RegisteredAt = DateTime.Now,
             };
 
-            await userRepository.Add(user, ct);
+            userRepository.Add(user, ct);
 
             return user;
         }

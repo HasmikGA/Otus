@@ -12,7 +12,7 @@ namespace TaskBot.Infrastructure.DataAccess
     internal class InMemoryToDoRepository : IToDoRepository
     {
         private readonly List<ToDoItem> toDoItems = new List<ToDoItem>();
-        public async Task Add(ToDoItem item, CancellationToken ct)
+        public void Add(ToDoItem item, CancellationToken ct)
         {
             toDoItems.Add(item);
         }
@@ -23,7 +23,7 @@ namespace TaskBot.Infrastructure.DataAccess
             return activetList.Count;
         }
 
-        public async Task Delete(Guid id, CancellationToken ct)
+        public void Delete(Guid id, CancellationToken ct)
         {
             for (int i = 0; i < toDoItems.Count; i++)
             {
@@ -34,8 +34,7 @@ namespace TaskBot.Infrastructure.DataAccess
                 }
             }
         }
-
-        public async Task<bool> ExistsByName(Guid userId, string name, CancellationToken ct)
+        public bool ExistsByName(Guid userId, string name, CancellationToken ct)
         {
             for (int i = 0; i < toDoItems.Count; i++)
             {
@@ -86,7 +85,7 @@ namespace TaskBot.Infrastructure.DataAccess
             return allList;
         }
 
-        public async Task Update(ToDoItem item, CancellationToken ct)
+        public void Update(ToDoItem item, CancellationToken ct)
         {
             for (int i = 0; i < toDoItems.Count; i++)
             {

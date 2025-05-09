@@ -1,4 +1,4 @@
-﻿using Otus.ToDoList.ConsoleBot.Types;
+﻿
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -61,7 +61,7 @@ namespace TaskBot.Core.Services
                 State = ToDoItemState.Active,
             };
 
-            await toDoRepository.Add(toDoItem, ct);
+            toDoRepository.Add(toDoItem, ct);
 
             return toDoItem;
         }

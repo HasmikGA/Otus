@@ -1,20 +1,27 @@
-﻿using Otus.ToDoList.ConsoleBot;
-using Otus.ToDoList.ConsoleBot.Types;
+﻿
+using System;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using System.Threading;
 using TaskBot.Core.Entities;
 using TaskBot.Core.Exceptions;
 using TaskBot.Core.Services;
+using Telegram.Bot;
+using Telegram.Bot.Polling;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace TaskBot.TelegramBot
 {
-    public  delegate void MessageEventHandler(string  message);
+    public delegate void MessageEventHandler(string message);
 
     internal class UpdateHandler : IUpdateHandler
     {
-        public event MessageEventHandler OnHandleUpdateStarted;
+        public event MessageEventHandler OnHandleUpdateStarted = null;
 
-        public event MessageEventHandler OnHandleUpdateCompleted;
+        public event MessageEventHandler OnHandleUpdateCompleted = null;
 
 
         private readonly IUserService userService;
@@ -39,27 +46,27 @@ namespace TaskBot.TelegramBot
             }
             catch (ArgumentException ex)
             {
-                await botClient.SendMessage(chat, ex.Message, ct);
+                await botClient.SendMessage(chat, ex.Message, cancellationToken: ct);
             }
             catch (TaskCountLimitException ex)
             {
-                await botClient.SendMessage(chat, ex.Message, ct);
+                await botClient.SendMessage(chat, ex.Message, cancellationToken: ct);
             }
             catch (TaskLengthLimitException ex)
             {
-                await botClient.SendMessage(chat, ex.Message, ct);
+                await botClient.SendMessage(chat, ex.Message, cancellationToken: ct);
             }
             catch (DuplicateTaskException ex)
             {
-                await botClient.SendMessage(chat, ex.Message, ct);
+                await botClient.SendMessage(chat, ex.Message, cancellationToken: ct);
             }
 
             this.OnHandleUpdateCompleted?.Invoke(update.Message.Text);
         }
-
-        public async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken ct)
+        public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource source, CancellationToken ct)
         {
-            await botClient.SendMessage(null, exception.Message, ct);
+            Console.WriteLine($"Error: {exception})");
+            return Task.CompletedTask;
         }
 
         private async Task HandleUpdate(ITelegramBotClient botClient, Update update, CancellationToken ct)
@@ -86,49 +93,63 @@ namespace TaskBot.TelegramBot
 
             switch (command)
             {
-                case "start":
+                case "/start":
                     await userService.RegisterUser(update.Message.From.Id, update.Message.From.Username ?? string.Empty, ct);
-                    await botClient.SendMessage(chat, "help, info, addtask, removetask, showtasks, showalltasks, completetask, report, find, exit:", ct);
+
+                    var reply = new ReplyKeyboardMarkup
+                    {
+                        Keyboard = new[]
+                        {
+                            new[]
+                            {
+                                 new KeyboardButton ("/showalltasks"),
+                                 new KeyboardButton ("/showtasks"),
+                                 new KeyboardButton ("/report")
+
+                            }
+                        }
+
+                    };
+
+                    await botClient.SendMessage(chat, "Welcome to your bot. How can I help you?", replyMarkup: reply, cancellationToken: ct);
                     break;
 
-                case "help":
+                case "/help":
                     await Helping(botClient, chat, ct);
-                    await botClient.SendMessage(chat, "start, info, addtask, removetask, showtasks, showalltasks, completetask, report, find, exit:", ct);
                     break;
 
-                case "info":
+                case "/info":
                     await ProvideInfo(botClient, chat, ct);
-                    await botClient.SendMessage(chat, "start, help, addtask, removetask, showtasks, showalltasks, completetask, report, find, exit:", ct);
                     break;
 
-                case "addtask":
+                case "/addtask":
                     await AddTask(botClient, update, ct);
                     break;
 
-                case "showtasks":
-                    await ShowTasks(botClient, chat, ct);
+                case "/showtasks":
+                    await ShowTasks(botClient, update, ct);
                     break;
 
-                case "showalltasks":
-                    await ShowAllTasks(botClient, chat, ct);
+                case "/showalltasks":
+                    await ShowAllTasks(botClient, update, ct);
                     break;
 
-                case "removetask":
+                case "/removetask":
                     await RemoveTask(botClient, update, ct);
                     break;
 
-                case "completetask":
+                case "/completetask":
                     await CompleteTask(botClient, update, ct);
                     break;
 
-                case "report":
-                    await ReportTasks(botClient, chat, ct);
+                case "/report":
+                    await ReportTasks(botClient, update, ct);
                     break;
-                case "find":
+                case "/find":
                     await FindTasks(botClient, update, ct);
                     break;
 
-                case "exit":
+                case "/exit":
                     await Exit(botClient, chat, ct);
                     return;
 
@@ -140,29 +161,32 @@ namespace TaskBot.TelegramBot
 
         public async Task ProvideInfo(ITelegramBotClient botClient, Chat chat, CancellationToken ct)
         {
-            await botClient.SendMessage(chat, "This is the 1.0.0 version of programm, which was created in 2025.", ct);
+            await botClient.SendMessage(chat, "This is the 1.0.0 version of programm, which was created in 2025.", cancellationToken: ct);
         }
 
         public async Task Helping(ITelegramBotClient botClient, Chat chat, CancellationToken ct)
         {
 
             await botClient.SendMessage(chat, "1.Open the programm and follow the commands you see. \n2.You should choose one of those. \n" +
-                               "3.You have to write the command as you see it. \n4.Recommend you to start with command start.", ct);
+                               "3.You have to write the command as you see it. \n4.Recommend you to start with command start.", cancellationToken: ct);
             await botClient.SendMessage(chat, "Addtask - command to add a task for execution. For command addtask keep format (addtask taskname).\n Showalltasks - command to see all tasks you have.\n" +
                               "Showactivetasks - command to see only commands with active state. Removetask - command to remove any command you want. For command removetask keep format (removetask taskname).\n" +
                               "Completetask - command to get to the command competed state. Report - contains an information about tasks statistic.\n" +
-                              "Find - command to find all tasks to starting with namePrefix.For command find keep format (find taskname)", ct);
+                              "Find - command to find all tasks to starting with namePrefix.For command find keep format (find taskname)", cancellationToken: ct);
         }
 
-        public async Task ShowTasks(ITelegramBotClient botClient, Chat chat, CancellationToken ct)
+        public async Task ShowTasks(ITelegramBotClient botClient, Update update, CancellationToken ct)
         {
-            await botClient.SendMessage(chat, "Here is your active tasklist:", ct);
+            Chat chat = update.Message.Chat;
+            await botClient.SendMessage(chat, "Here is your active tasklist:", cancellationToken: ct);
 
-            IReadOnlyList<ToDoItem> toDoList = await toDoService.GetActiveByUserId(Guid.NewGuid(), ct);
+            var user = await userService.GetUser(update.Message.From.Id, ct);
+
+            IReadOnlyList<ToDoItem> toDoList = await toDoService.GetActiveByUserId(user.UserId, ct);
 
             for (int i = 0; i < toDoList.Count; i++)
             {
-                await botClient.SendMessage(chat, $"{i + 1}.{toDoList[i].Name} - {toDoList[i].CreatedAt} - {toDoList[i].Id}", ct);
+                await botClient.SendMessage(chat.Id, $"{i + 1}.{toDoList[i].Name} - {toDoList[i].CreatedAt} - <code>{toDoList[i].Id}</code>", ParseMode.Html, cancellationToken: ct);
             }
         }
 
@@ -171,31 +195,33 @@ namespace TaskBot.TelegramBot
             Chat chat = update.Message.Chat;
             string messageText = update.Message.Text;
             string taskName = messageText.Substring(messageText.IndexOf(' ') + 1);
+            var user = await userService.GetUser(update.Message.From.Id, ct);
 
-            ToDoItem task = await toDoService.Add(new ToDoUser(), taskName, ct);
+            ToDoItem task = await toDoService.Add(user, taskName, ct);
 
-            await botClient.SendMessage(chat, $"The task \"{task.Name}\" has been added.", ct);
+            await botClient.SendMessage(chat, $"The task \"{task.Name}\" has been added.", cancellationToken: ct);
         }
 
         public async Task RemoveTask(ITelegramBotClient botClient, Update update, CancellationToken ct)
         {
             Chat chat = update.Message.Chat;
             string messageText = update.Message.Text;
+            var user = await userService.GetUser(update.Message.From.Id, ct);
             int taskNumber;
             string number = messageText.Substring(messageText.IndexOf(' ') + 1);
             bool isTaskNumber = int.TryParse(number, out taskNumber);
             if (!isTaskNumber)
             {
-                await botClient.SendMessage(chat, "Wrong number!", ct);
+                await botClient.SendMessage(chat, "Wrong number!", cancellationToken: ct);
             }
-            IReadOnlyList<ToDoItem> toDoList = await toDoService.GetActiveByUserId(Guid.NewGuid(), ct);
+            IReadOnlyList<ToDoItem> toDoList = await toDoService.GetActiveByUserId(user.UserId, ct);
             if (taskNumber > toDoList.Count && taskNumber < 1)
             {
                 throw new IndexOutOfRangeException("The task number isn`t in correct form");
             }
             int indexOfNum = taskNumber - 1;
             var itemToRemove = toDoList[indexOfNum];
-            await botClient.SendMessage(chat, $"The task \"{itemToRemove}\" has been removed:", ct);
+            await botClient.SendMessage(chat, $"The task \"{itemToRemove}\" has been removed:", cancellationToken: ct);
             await toDoService.Delete(toDoList[taskNumber - 1].Id, ct);
 
         }
@@ -208,33 +234,39 @@ namespace TaskBot.TelegramBot
             bool isTaskId = Guid.TryParse(id, out taskId);
             if (!isTaskId)
             {
-                await botClient.SendMessage(chat, "Wrong Id!", ct);
+                await botClient.SendMessage(chat, "Wrong Id!", cancellationToken: ct);
             }
             await toDoService.MarkCompleted(taskId, ct);
         }
 
-        public async Task ShowAllTasks(ITelegramBotClient botClient, Chat chat, CancellationToken ct)
+        public async Task ShowAllTasks(ITelegramBotClient botClient, Update update, CancellationToken ct)
         {
-            await botClient.SendMessage(chat, "Here is your all tasklist:", ct);
-            var taskList = await toDoService.GetAllByUserId(Guid.NewGuid(), ct);
+            Chat chat = update.Message.Chat;
+            await botClient.SendMessage(chat, "Here is your all tasklist:", cancellationToken: ct);
+
+            var user = await userService.GetUser(update.Message.From.Id, ct);
+            var taskList = await toDoService.GetAllByUserId(user.UserId, ct);
 
             for (int i = 0; i < taskList.Count; i++)
             {
                 if (taskList[i].State == ToDoItemState.Completed)
                 {
-                    await botClient.SendMessage(chat, $" (Completed) {taskList[i].Name} - {taskList[i].CreatedAt} - {taskList[i].Id}", ct); ;
+                    await botClient.SendMessage(chat.Id, $" (Completed) {taskList[i].Name} - {taskList[i].CreatedAt} - <code>{taskList[i].Id}</code>", ParseMode.Html, cancellationToken: ct);
                 }
                 if (taskList[i].State == ToDoItemState.Active)
                 {
-                    await botClient.SendMessage(chat, $" (Active) {taskList[i].Name} - {taskList[i].CreatedAt} - {taskList[i].Id}", ct);
+                    await botClient.SendMessage(chat.Id, $" (Active) {taskList[i].Name} - {taskList[i].CreatedAt} - <code>{taskList[i].Id}</code>", ParseMode.Html, cancellationToken: ct);
                 }
             }
         }
 
-        public async Task ReportTasks(ITelegramBotClient botClient, Chat chat, CancellationToken ct)
+        public async Task ReportTasks(ITelegramBotClient botClient, Update update, CancellationToken ct)
         {
-            var report = await toDoReportService.GetUserStats(Guid.NewGuid(), ct);
-            await botClient.SendMessage(chat, $" Tasks statistics for {DateTime.Now}. Total:{report.total}, Completed:{report.completed}, Active:{report.active}:", ct);
+            Chat chat = update.Message.Chat;
+            var user = await userService.GetUser(update.Message.From.Id, ct);
+            var report = await toDoReportService.GetUserStats(user.UserId, ct);
+
+            await botClient.SendMessage(chat, $" Tasks statistics for {DateTime.Now}. Total:{report.total}, Completed:{report.completed}, Active:{report.active}:", cancellationToken: ct);
         }
 
         public async Task FindTasks(ITelegramBotClient botClient, Update update, CancellationToken ct)
@@ -247,12 +279,14 @@ namespace TaskBot.TelegramBot
 
             for (int i = 0; i < namePrefixList.Count; i++)
             {
-                await botClient.SendMessage(chat, $"{i + 1}.{namePrefixList[i].Name} - {namePrefixList[i].CreatedAt} - {namePrefixList[i].Id}", ct);
+                await botClient.SendMessage(chat, $"{i + 1}.{namePrefixList[i].Name} - {namePrefixList[i].CreatedAt} - {namePrefixList[i].Id}", cancellationToken: ct);
             }
         }
         public async Task Exit(ITelegramBotClient botClient, Chat chat, CancellationToken ct)
         {
-            await botClient.SendMessage(chat, "The program is over!", ct);
+            await botClient.SendMessage(chat, "The program is over!", cancellationToken: ct);
         }
+
+
     }
 }

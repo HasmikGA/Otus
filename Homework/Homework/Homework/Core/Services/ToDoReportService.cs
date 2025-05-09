@@ -1,5 +1,4 @@
-﻿using Otus.ToDoList.ConsoleBot.Types;
-using Otus.ToDoList.ConsoleBot;
+﻿
 using System;
 using System.Collections.Generic;
 using System.Linq;
