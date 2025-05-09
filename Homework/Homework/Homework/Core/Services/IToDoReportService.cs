@@ -8,6 +8,6 @@ namespace TaskBot.Core.Services
 {
     internal interface IToDoReportService
     {
-        (int total, int completed, int active, DateTime generatedAt) GetUserStats(Guid userId);
+        Task<(int total, int completed, int active, DateTime generatedAt)> GetUserStats(Guid userId, CancellationToken ct);
     }
 }

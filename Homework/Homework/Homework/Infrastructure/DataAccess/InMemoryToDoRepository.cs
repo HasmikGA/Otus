@@ -12,18 +12,18 @@ namespace TaskBot.Infrastructure.DataAccess
     internal class InMemoryToDoRepository : IToDoRepository
     {
         private readonly List<ToDoItem> toDoItems = new List<ToDoItem>();
-        public void Add(ToDoItem item)
+        public void Add(ToDoItem item, CancellationToken ct)
         {
             toDoItems.Add(item);
         }
 
-        public int CountActive(Guid userId)
+        public async Task<int> CountActive(Guid userId, CancellationToken ct)
         {
-            IReadOnlyList<ToDoItem> activetList = GetActiveByUserId(userId);
+            IReadOnlyList<ToDoItem> activetList = await GetActiveByUserId(userId, ct);
             return activetList.Count;
         }
 
-        public void Delete(Guid id)
+        public void Delete(Guid id, CancellationToken ct)
         {
             for (int i = 0; i < toDoItems.Count; i++)
             {
@@ -34,8 +34,7 @@ namespace TaskBot.Infrastructure.DataAccess
                 }
             }
         }
-
-        public bool ExistsByName(Guid userId, string name)
+        public bool ExistsByName(Guid userId, string name, CancellationToken ct)
         {
             for (int i = 0; i < toDoItems.Count; i++)
             {
@@ -47,56 +46,56 @@ namespace TaskBot.Infrastructure.DataAccess
             return false;
         }
 
-        public IReadOnlyList<ToDoItem> Find(Guid userId, Func<ToDoItem, bool> predicate)
+        public async Task<IReadOnlyList<ToDoItem>> Find(Guid userId, Func<ToDoItem, bool> predicate, CancellationToken ct)
         {
             List<ToDoItem> pridicateList = new List<ToDoItem>();
             for (int i = 0; i < toDoItems.Count; i++)
             {
                 if (toDoItems[i].User?.UserId == userId && predicate(toDoItems[i]))
                 {
-                pridicateList.Add(toDoItems[i]);
+                    pridicateList.Add(toDoItems[i]);
+                }
             }
-        }
             return pridicateList;
         }
 
-    public IReadOnlyList<ToDoItem> GetActiveByUserId(Guid userId)
-    {
-        List<ToDoItem> activetList = new List<ToDoItem>();
-        for (int i = 0; i < toDoItems.Count; i++)
+        public async Task<IReadOnlyList<ToDoItem>> GetActiveByUserId(Guid userId, CancellationToken ct)
         {
-            if (toDoItems[i].User?.UserId == userId && toDoItems[i].State == ToDoItemState.Active)
+            List<ToDoItem> activetList = new List<ToDoItem>();
+            for (int i = 0; i < toDoItems.Count; i++)
             {
-                activetList.Add(toDoItems[i]);
+                if (toDoItems[i].User?.UserId == userId && toDoItems[i].State == ToDoItemState.Active)
+                {
+                    activetList.Add(toDoItems[i]);
+                }
             }
+            return activetList;
         }
-        return activetList;
-    }
 
-    public IReadOnlyList<ToDoItem> GetAllByUserId(Guid userId)
-    {
-        List<ToDoItem> allList = new List<ToDoItem>();
-        for (int i = 0; i < toDoItems.Count; i++)
+        public async Task<IReadOnlyList<ToDoItem>> GetAllByUserId(Guid userId, CancellationToken ct)
         {
-            if (toDoItems[i].User?.UserId == userId)
+            List<ToDoItem> allList = new List<ToDoItem>();
+            for (int i = 0; i < toDoItems.Count; i++)
             {
-                allList.Add(toDoItems[i]);
+                if (toDoItems[i].User?.UserId == userId)
+                {
+                    allList.Add(toDoItems[i]);
+                }
             }
+            return allList;
         }
-        return allList;
-    }
 
-    public void Update(ToDoItem item)
-    {
-        for (int i = 0; i < toDoItems.Count; i++)
+        public void Update(ToDoItem item, CancellationToken ct)
         {
-            if (toDoItems[i].Id == item.Id)
+            for (int i = 0; i < toDoItems.Count; i++)
             {
-                var itemToUpdate = toDoItems[i];
-                itemToUpdate.Name = item.Name;
-                break;
+                if (toDoItems[i].Id == item.Id)
+                {
+                    var itemToUpdate = toDoItems[i];
+                    itemToUpdate.Name = item.Name;
+                    break;
+                }
             }
         }
     }
-}
 }
