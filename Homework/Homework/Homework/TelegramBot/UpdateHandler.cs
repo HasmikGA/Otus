@@ -76,19 +76,19 @@ namespace TaskBot.TelegramBot
 
             if (command.Contains("addtask"))
             {
-                command = "addtask";
+                command = "/addtask";
             }
             else if (command.Contains("removetask"))
             {
-                command = "removetask";
+                command = "/removetask";
             }
             else if (command.Contains("completetask"))
             {
-                command = "completetask";
+                command = "/completetask";
             }
             else if (command.Contains("find"))
             {
-                command = "find";
+                command = "/find";
             }
 
             switch (command)
