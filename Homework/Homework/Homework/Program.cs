@@ -1,4 +1,7 @@
-﻿using TaskBot.Core.DataAccess;
+﻿using System.IO;
+using TaskBot;
+using TaskBot.Core.DataAccess;
+using TaskBot.Core.Entities;
 using TaskBot.Core.Services;
 using TaskBot.Infrastructure.DataAccess;
 using TaskBot.TelegramBot;
@@ -15,6 +18,7 @@ namespace Homework
 
         static async Task Main(string[] args)
         {
+            
             string clToken = Environment.GetEnvironmentVariable("TELEGRAM_BOT_TOKEN", EnvironmentVariableTarget.User);
             if (string.IsNullOrEmpty(clToken))
             {
@@ -23,8 +27,8 @@ namespace Homework
             }
 
             var telegramBotClinet = new TelegramBotClient(clToken);
-            IUserRepository userRepository = new InMemoryUserRepository();
-            IToDoRepository toDoRepository = new InMemoryToDoRepository();
+            IUserRepository userRepository = new FileUserRepository("TaskBot-ToDoUser");
+            IToDoRepository toDoRepository = new FileToDoRepository("TaskBot-ToDoItems");
             IToDoReportService toDoReportService = new ToDoReportService(toDoRepository);
             var updateHandler = new UpdateHandler(new UserService(userRepository), new ToDoService(20, 100, toDoRepository), new ToDoReportService(toDoRepository));
             CancellationTokenSource cancellationToken = new CancellationTokenSource();
