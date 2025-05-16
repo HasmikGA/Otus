@@ -1,5 +1,4 @@
-﻿using Otus.ToDoList.ConsoleBot.Types;
-using Otus.ToDoList.ConsoleBot;
+﻿
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,10 +16,10 @@ namespace TaskBot.Core.Services
         {
             this.toDoRepository = toDoRepository;
         }
-        public (int total, int completed, int active, DateTime generatedAt) GetUserStats(Guid userId)
+        public async Task <(int total, int completed, int active, DateTime generatedAt)> GetUserStats(Guid userId, CancellationToken ct)
         {
-            var allList = toDoRepository.GetAllByUserId(userId);
-            int active = toDoRepository.CountActive(userId);
+            var allList = await toDoRepository.GetAllByUserId(userId, ct);
+            int active = await toDoRepository.CountActive(userId, ct);
             int completed = allList.Count - active;
 
             return (allList.Count, completed, active, DateTime.Now);
