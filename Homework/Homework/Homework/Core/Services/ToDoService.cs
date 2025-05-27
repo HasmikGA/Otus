@@ -30,7 +30,7 @@ namespace TaskBot.Core.Services
         }
 
 
-        public async Task<ToDoItem> Add(ToDoUser user, string name, CancellationToken ct)
+        public async Task<ToDoItem> Add(ToDoUser user, string name, DateTime deadline, CancellationToken ct)
         {
             if (toDoItems.Count > itemCountLimit)
             {

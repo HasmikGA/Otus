@@ -10,6 +10,7 @@ namespace TaskBot.Core.Entities
 {
     internal class ToDoItem
     {
+        public DateTime Deadline { get; set; } 
         public Guid Id { get; set; }
         public ToDoUser? User { get; set; }
         public string? Name { get; set; }
