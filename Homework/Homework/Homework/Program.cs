@@ -5,6 +5,7 @@ using TaskBot.Core.Entities;
 using TaskBot.Core.Services;
 using TaskBot.Infrastructure.DataAccess;
 using TaskBot.TelegramBot;
+using TaskBot.TelegramBot.Scenarios;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
@@ -18,7 +19,7 @@ namespace Homework
 
         static async Task Main(string[] args)
         {
-            
+
             string clToken = Environment.GetEnvironmentVariable("TELEGRAM_BOT_TOKEN", EnvironmentVariableTarget.User);
             if (string.IsNullOrEmpty(clToken))
             {
@@ -29,8 +30,12 @@ namespace Homework
             var telegramBotClinet = new TelegramBotClient(clToken);
             IUserRepository userRepository = new FileUserRepository("TaskBot-ToDoUser");
             IToDoRepository toDoRepository = new FileToDoRepository("TaskBot-ToDoItems");
+            IScenarioContextRepository contextRepository = new InMemoryScenarioContextRepository();
             IToDoReportService toDoReportService = new ToDoReportService(toDoRepository);
-            var updateHandler = new UpdateHandler(new UserService(userRepository), new ToDoService(20, 100, toDoRepository), new ToDoReportService(toDoRepository));
+            var userService = new UserService(userRepository);
+            var toDoService = new ToDoService(20, 100, toDoRepository);
+            var scenarios = new[] { new AddTaskScenario(userService, toDoService) };
+            var updateHandler = new UpdateHandler(userService, toDoService, new ToDoReportService(toDoRepository), scenarios, contextRepository);
             CancellationTokenSource cancellationToken = new CancellationTokenSource();
             CancellationToken ct = cancellationToken.Token;
             ReceiverOptions receiverOptions = new ReceiverOptions()
@@ -65,7 +70,7 @@ namespace Homework
                     }
 
                 }
-                
+
             }
             catch (Exception ex)
             {
@@ -104,6 +109,6 @@ namespace Homework
         {
             Console.WriteLine($"Закончилась обработка сообщения '{message}'");
         }
-        
+
     }
 }
