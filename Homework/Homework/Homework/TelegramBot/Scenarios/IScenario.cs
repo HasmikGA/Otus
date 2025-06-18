@@ -10,7 +10,6 @@ namespace TaskBot.TelegramBot.Scenarios
 {
     internal interface IScenario
     {
-        ScenarioType Type { get; }
         bool CanHandle(ScenarioType scenario);
         Task<ScenarioResult> HandleMessageAsync(ITelegramBotClient bot, ScenarioContext context, Update update, CancellationToken ct);
     }

@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.ConstrainedExecution;
 using System.Text;
 using System.Threading.Tasks;
+using TaskBot.Core.Entities;
 using TaskBot.Core.Services;
+using TaskBot.TelegramBot.Dto;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace TaskBot.TelegramBot.Scenarios
 {
@@ -13,21 +17,33 @@ namespace TaskBot.TelegramBot.Scenarios
     {
         private readonly IUserService userService;
         private readonly IToDoService toDoService;
+        private readonly IToDoListService toDoListService;
 
-        public ScenarioType Type => ScenarioType.AddTask;
-
-        public AddTaskScenario(IUserService userService, IToDoService toDoService)
+        public AddTaskScenario(IUserService userService, IToDoService toDoService, IToDoListService toDoListService)
         {
             this.userService = userService;
             this.toDoService = toDoService;
+            this.toDoListService = toDoListService;
         }
+
         public bool CanHandle(ScenarioType scenario)
         {
-            throw new NotImplementedException();
+            return scenario == ScenarioType.AddTask;
         }
 
         public async Task<ScenarioResult> HandleMessageAsync(ITelegramBotClient bot, ScenarioContext context, Update update, CancellationToken ct)
         {
+            if(update.CallbackQuery != null)
+            {
+                var callbackDto = ToDoListCallbackDto.FromString(update.CallbackQuery.Data);
+                var list = await this.toDoListService.Get(callbackDto.ToDoListId.Value, ct);
+                var user = await this.userService.GetUser(context.UserId, ct);
+                await toDoService.Add(user, context.Data["Name"].ToString(), (DateTime)context.Data["Deadline"], list, ct);
+
+                await bot.SendMessage(update.Message.Chat, $"The task \"{context.Data["Name"]}\" has been added into the list {list.Name} ", cancellationToken: ct);
+                return ScenarioResult.Completed;
+            }
+
             switch (context.CurrentStep)
             {
                 case null:
@@ -47,10 +63,17 @@ namespace TaskBot.TelegramBot.Scenarios
                         return ScenarioResult.Transition;
                     }
 
+                    context.Data["Deadline"] = deadLine;
+
                     var user = await this.userService.GetUser(context.UserId, ct);
-                    await toDoService.Add(user, context.Data["Name"].ToString(), deadLine, ct);
-                    await bot.SendMessage(update.Message.Chat, $"The task \"{update.Message.Text}\" has been added.", cancellationToken: ct);
-                    return ScenarioResult.Completed;
+                    var lists = await this.toDoListService.GetUserLists(user.UserId, ct);
+                    var reply = new InlineKeyboardMarkup(new[]
+                    {
+                        lists.Select(list => InlineKeyboardButton.WithCallbackData(list.Name, new ToDoListCallbackDto { Action = "select", ToDoListId = list.Id }.ToString()))
+                    });
+                    
+                    await bot.SendMessage(update.Message.Chat, "Choose the list for task", replyMarkup:reply, cancellationToken: ct);
+                    return ScenarioResult.Transition;
             }
 
             return ScenarioResult.Transition;

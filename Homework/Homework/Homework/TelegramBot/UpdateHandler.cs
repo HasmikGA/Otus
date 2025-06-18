@@ -14,6 +14,7 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using System.Collections;
 using TaskBot.TelegramBot.Scenarios;
+using TaskBot.TelegramBot.Dto;
 
 namespace TaskBot.TelegramBot
 {
@@ -25,22 +26,47 @@ namespace TaskBot.TelegramBot
 
         public event MessageEventHandler OnHandleUpdateCompleted = null;
 
-
         private readonly IUserService userService;
         private readonly IToDoService toDoService;
         private readonly IToDoReportService toDoReportService;
         private readonly IEnumerable<IScenario> scenarios;
         private readonly IScenarioContextRepository contextRepository;
+        private readonly IToDoListService toDoListService;
 
-        public UpdateHandler(IUserService userService, IToDoService toDoService, IToDoReportService toDoReportService, IEnumerable<IScenario> scenarios, IScenarioContextRepository contextRepository)
+        public UpdateHandler(IUserService userService, IToDoService toDoService, IToDoReportService toDoReportService, IEnumerable<IScenario> scenarios, IScenarioContextRepository contextRepository, IToDoListService toDoListService)
         {
             this.userService = userService;
             this.toDoService = toDoService;
             this.toDoReportService = toDoReportService;
             this.scenarios = scenarios;
             this.contextRepository = contextRepository;
+            this.toDoListService = toDoListService;
         }
+
         public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken ct)
+        {
+            if (update.Message != null)
+            {
+                await this.OnMessage(botClient, update, update.Message, ct);
+                return;
+            }
+
+            if (update.CallbackQuery != null)
+            {
+                await this.OnCallbackQuery(botClient, update, update.CallbackQuery, ct);
+                return;
+            }
+
+            await this.OnUnknown(update);
+        }
+
+        public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource source, CancellationToken ct)
+        {
+            Console.WriteLine($"Error: {exception})");
+            return Task.CompletedTask;
+        }
+
+        private async Task OnMessage(ITelegramBotClient botClient, Update update, Message message, CancellationToken ct)
         {
             Chat chat = update.Message.Chat;
             this.OnHandleUpdateStarted?.Invoke(update.Message.Text);
@@ -68,10 +94,51 @@ namespace TaskBot.TelegramBot
 
             this.OnHandleUpdateCompleted?.Invoke(update.Message.Text);
         }
-        public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource source, CancellationToken ct)
+
+        private async Task OnCallbackQuery(ITelegramBotClient botClient, Update update, CallbackQuery callbackQuery, CancellationToken ct)
         {
-            Console.WriteLine($"Error: {exception})");
-            return Task.CompletedTask;
+            var telegramUserId = callbackQuery.From.Id;
+            var user = await this.userService.GetUser(telegramUserId, ct);
+            if (user == null)
+            {
+                throw new InvalidDataException("Unauthorized user");
+            }
+
+            var context = await this.contextRepository.GetContext(telegramUserId, ct);
+            if (context != null)
+            {
+                await this.ProcessScenario(botClient, context, update, ct);
+                return;
+            }
+
+            var callbackDto = CallbackDto.FromString(callbackQuery.Data);
+
+            if (callbackDto.Action == "show")
+            {
+                var toDoListDto = ToDoListCallbackDto.FromString(callbackQuery.Data);
+                var toDoItems = await this.toDoService.GetByUserIdAndList(user.UserId, toDoListDto.ToDoListId, ct);
+
+                for (int i = 0; i < toDoItems.Count; i++)
+                {
+                    await botClient.SendMessage(update.Message.Chat.Id, $"{i + 1}.{toDoItems[i].Name} - {toDoItems[i].CreatedAt} - <code>{toDoItems[i].Id}</code>", ParseMode.Html, cancellationToken: ct);
+                }
+            }
+
+            if(callbackDto.Action == "addlist")
+            {
+                await this.ProcessScenario(botClient, new ScenarioContext(ScenarioType.AddList), update, ct);
+            }
+
+            if (callbackDto.Action == "deletelist")
+            {
+                await this.ProcessScenario(botClient, new ScenarioContext(ScenarioType.DeleteList), update, ct);
+            }
+
+        }
+
+        private async Task OnUnknown(Update update)
+        {
+
         }
 
         private async Task HandleUpdate(ITelegramBotClient botClient, Update update, CancellationToken ct)
@@ -120,8 +187,7 @@ namespace TaskBot.TelegramBot
                             new[]
                             {
                                  new KeyboardButton("/addtask"),
-                                 new KeyboardButton ("/showalltasks"),
-                                 new KeyboardButton ("/showtasks"),
+                                 new KeyboardButton ("/show"),
                                  new KeyboardButton ("/report")
 
                             }
@@ -144,12 +210,8 @@ namespace TaskBot.TelegramBot
                     await AddTask(botClient, update, ct);
                     break;
 
-                case "/showtasks":
+                case "/show":
                     await ShowTasks(botClient, update, ct);
-                    break;
-
-                case "/showalltasks":
-                    await ShowAllTasks(botClient, update, ct);
                     break;
 
                 case "/removetask":
@@ -184,7 +246,7 @@ namespace TaskBot.TelegramBot
         {
             foreach (var scenario in this.scenarios)
             {
-                if (scenario.Type == scenarioType)
+                if (scenario.CanHandle(scenarioType))
                 {
                     return scenario;
                 }
@@ -213,6 +275,7 @@ namespace TaskBot.TelegramBot
 
                 await botClient.SendMessage(update.Message.Chat, string.Empty, replyMarkup: reply, cancellationToken: ct);
             }
+
             if (result == ScenarioResult.Completed)
             {
                 var reply = new ReplyKeyboardMarkup
@@ -222,18 +285,19 @@ namespace TaskBot.TelegramBot
                             new[]
                             {
                                  new KeyboardButton("/addtask"),
-                                 new KeyboardButton ("/showalltasks"),
-                                 new KeyboardButton ("/showtasks"),
+                                 new KeyboardButton ("/show"),
                                  new KeyboardButton ("/report")
 
                             }
                         }
 
                 };
+
                 await botClient.SendMessage(update.Message.Chat, string.Empty, replyMarkup: reply, cancellationToken: ct);
                 this.contextRepository.ResetContext(update.Message.From.Id, ct);
             }
         }
+
         public async Task Cancel(ITelegramBotClient botClient, Update update, CancellationToken ct)
         {
             var reply = new ReplyKeyboardMarkup
@@ -243,10 +307,8 @@ namespace TaskBot.TelegramBot
                             new[]
                             {
                                  new KeyboardButton("/addtask"),
-                                 new KeyboardButton ("/showalltasks"),
-                                 new KeyboardButton ("/showtasks"),
+                                 new KeyboardButton ("/show"),
                                  new KeyboardButton ("/report")
-
                             }
                         }
 
@@ -273,10 +335,26 @@ namespace TaskBot.TelegramBot
 
         public async Task ShowTasks(ITelegramBotClient botClient, Update update, CancellationToken ct)
         {
+            var user = await this.userService.GetUser(update.Message.From.Id, ct);
+            var lists = await this.toDoListService.GetUserLists(user.UserId, ct);
             Chat chat = update.Message.Chat;
-            await botClient.SendMessage(chat, "Here is your active tasklist:", cancellationToken: ct);
 
-            var user = await userService.GetUser(update.Message.From.Id, ct);
+            var reply = new InlineKeyboardMarkup(new[]
+            {
+                new[]
+                {
+                    InlineKeyboardButton.WithCallbackData("Whithout list", new ToDoListCallbackDto { Action = "show", ToDoListId = null }.ToString()),
+                },
+                lists.Select(x => InlineKeyboardButton.WithCallbackData(x.Name, new ToDoListCallbackDto { Action = "show", ToDoListId = x.Id }.ToString())),
+                new []
+                {
+                    InlineKeyboardButton.WithCallbackData("Add","addlist"),
+                    InlineKeyboardButton.WithCallbackData("Delete","deletelist")
+                }
+
+            });
+
+            await botClient.SendMessage(chat, "Choose the list:", replyMarkup: reply, cancellationToken: ct);
 
             IReadOnlyList<ToDoItem> toDoList = await toDoService.GetActiveByUserId(user.UserId, ct);
 

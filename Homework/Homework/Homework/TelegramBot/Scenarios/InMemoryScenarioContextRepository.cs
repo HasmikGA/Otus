@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +9,7 @@ namespace TaskBot.TelegramBot.Scenarios
 {
     internal class InMemoryScenarioContextRepository : IScenarioContextRepository
     {
-        Dictionary<long, ScenarioContext> scenarios = new Dictionary<long, ScenarioContext>();
+        ConcurrentDictionary<long, ScenarioContext> scenarios = new ConcurrentDictionary<long, ScenarioContext>();
         public Task<ScenarioContext?> GetContext(long userId, CancellationToken ct)
         {
             ScenarioContext? context = null;
@@ -28,7 +29,7 @@ namespace TaskBot.TelegramBot.Scenarios
 
         public Task ResetContext(long userId, CancellationToken ct)
         {
-            this.scenarios.Remove(userId);
+            this.scenarios.Remove(userId,out ScenarioContext value);
             return Task.CompletedTask;
         }
     }

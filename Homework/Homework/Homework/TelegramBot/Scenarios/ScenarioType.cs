@@ -10,5 +10,7 @@ namespace TaskBot.TelegramBot.Scenarios
     {
         None,
         AddTask,
+        AddList,
+        DeleteList,
     }
 }
