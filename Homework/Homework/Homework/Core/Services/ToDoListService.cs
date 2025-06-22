@@ -20,7 +20,7 @@ namespace TaskBot.Core.Services
         {
             if (await toDoListRepository.ExistsByName(user.UserId, name, ct) || name.Length > 10)
             {
-                throw new Exception();
+                throw new ArgumentException("Repeated or long list name");
             }
 
             var toDoList = new ToDoList

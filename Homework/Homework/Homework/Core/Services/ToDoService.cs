@@ -69,15 +69,8 @@ namespace TaskBot.Core.Services
         }
         public async Task<IReadOnlyList<ToDoItem>> GetByUserIdAndList(Guid userId, Guid? listId, CancellationToken ct)
         {
-            var toDoItemList = new List<ToDoItem>();
-            var resut = await toDoRepository.GetAllByUserId(userId, ct);
-            for (int i = 0; i < resut.Count; i++)
-            {
-                if (resut[i]?.List?.Id == listId)
-                {
-                    toDoItemList.Add(resut[i]);
-                }
-            }
+            var toDoItemList = await this.toDoRepository.GetByUserIdAndList(userId, listId, ct);
+           
             return toDoItemList;
         }
         public async Task<IReadOnlyList<ToDoItem>> GetActiveByUserId(Guid userId, CancellationToken ct)

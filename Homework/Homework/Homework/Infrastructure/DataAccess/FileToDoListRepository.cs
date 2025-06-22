@@ -6,11 +6,10 @@ namespace TaskBot.Infrastructure.DataAccess
 {
     internal class FileToDoListRepository : IToDoListRepository
     {
-        private string ListFoldername { get; set; }
-
+        private readonly string listFoldername;
         public FileToDoListRepository(string listFoldername)
         {
-            this.ListFoldername = listFoldername;
+            this.listFoldername = listFoldername;
 
             if (!Directory.Exists(Path.Combine(listFoldername)))
             {
@@ -21,7 +20,7 @@ namespace TaskBot.Infrastructure.DataAccess
         public Task Add(ToDoList list, CancellationToken ct)
         {
             string fileNameList = $"{list.Id}.json";
-            var path = Path.Combine(ListFoldername, fileNameList);
+            var path = Path.Combine(listFoldername, fileNameList);
 
             using (File.Create(path)) ;
 
@@ -34,7 +33,7 @@ namespace TaskBot.Infrastructure.DataAccess
 
         public Task Delete(Guid id, CancellationToken ct)
         {
-            var path = Path.Combine(ListFoldername);
+            var path = Path.Combine(listFoldername);
             if (!Directory.Exists(path))
             {
                 return Task.CompletedTask;
@@ -57,7 +56,7 @@ namespace TaskBot.Infrastructure.DataAccess
 
         public Task<bool> ExistsByName(Guid userId, string name, CancellationToken ct)
         {
-            var path = Path.Combine(this.ListFoldername);
+            var path = Path.Combine(this.listFoldername);
             if (!Directory.Exists(path))
             {
                 return Task.FromResult(false);
@@ -79,7 +78,7 @@ namespace TaskBot.Infrastructure.DataAccess
 
         public Task<ToDoList?> Get(Guid id, CancellationToken ct)
         {
-            var path = Path.Combine(ListFoldername);
+            var path = Path.Combine(listFoldername);
 
             if (Directory.Exists(path))
             {
@@ -101,7 +100,7 @@ namespace TaskBot.Infrastructure.DataAccess
 
         public Task<IReadOnlyList<ToDoList>> GetByUserId(Guid userId, CancellationToken ct)
         {
-            var path = Path.Combine(ListFoldername);
+            var path = Path.Combine(listFoldername);
             var userToDoList = new List<ToDoList>();
 
             if (Directory.Exists(path))

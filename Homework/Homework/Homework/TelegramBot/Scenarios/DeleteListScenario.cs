@@ -62,24 +62,25 @@ namespace TaskBot.TelegramBot.Scenarios
                     context.CurrentStep = "Delete";
                     return ScenarioResult.Transition;
                 case "Delete":
-                    if (update.CallbackQuery.Data == "yes")
+                    switch (update.CallbackQuery.Data)
                     {
-                        var userId = ((ToDoUser)context.Data["User"]).UserId;
-                        var listId = ((ToDoList)context.Data["List"]).Id;
-                        await this.toDoListService.Delete(listId, ct);
-                        var items = await this.toDoService.GetByUserIdAndList(userId, listId, ct);
-                        for(int i = 0; i < items.Count; i++)
-                        {
-                            await this.toDoService.Delete(items[i].Id, ct);
-                        }
-                        
-                    }
-                    if (update.CallbackQuery.Data == "no")
-                    {
-                        await bot.SendMessage(update.Message.Chat, "Deletion has been canceled ", cancellationToken: ct);
-                    }
-                    return ScenarioResult.Completed;
+                        case "Yes":
+                            var userId = ((ToDoUser)context.Data["User"]).UserId;
+                            var listId = ((ToDoList)context.Data["List"]).Id;
+                            await this.toDoListService.Delete(listId, ct);
+                            var items = await this.toDoService.GetByUserIdAndList(userId, listId, ct);
+                            for (int i = 0; i < items.Count; i++)
+                            {
+                                await this.toDoService.Delete(items[i].Id, ct);
+                            }
+                            break;
+                        case "No":
+                            await bot.SendMessage(update.Message.Chat, "Deletion has been canceled ", cancellationToken: ct);
+                            break;
 
+                    }
+
+                    return ScenarioResult.Completed;
 
             }
             return ScenarioResult.Transition;

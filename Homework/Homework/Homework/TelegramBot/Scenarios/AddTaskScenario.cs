@@ -69,7 +69,11 @@ namespace TaskBot.TelegramBot.Scenarios
                     var lists = await this.toDoListService.GetUserLists(user.UserId, ct);
                     var reply = new InlineKeyboardMarkup(new[]
                     {
-                        lists.Select(list => InlineKeyboardButton.WithCallbackData(list.Name, new ToDoListCallbackDto { Action = "select", ToDoListId = list.Id }.ToString()))
+                        new[]
+                        {
+                            InlineKeyboardButton.WithCallbackData("Whithout list", new ToDoListCallbackDto { Action = "show", ToDoListId = null }.ToString()),
+                        },
+                        lists.Select(list => InlineKeyboardButton.WithCallbackData(list.Name, new ToDoListCallbackDto { Action = "addtask_list", ToDoListId = list.Id }.ToString()))
                     });
                     
                     await bot.SendMessage(update.Message.Chat, "Choose the list for task", replyMarkup:reply, cancellationToken: ct);
