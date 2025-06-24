@@ -10,6 +10,12 @@ namespace TaskBot.TelegramBot.Scenarios
     internal class InMemoryScenarioContextRepository : IScenarioContextRepository
     {
         private readonly ConcurrentDictionary<long, ScenarioContext> scenarios = new ConcurrentDictionary<long, ScenarioContext>();
+
+        public Task<bool> HasContext(long userId, CancellationToken ct)
+        {
+            return Task.FromResult(this.scenarios.ContainsKey(userId));
+        }
+
         public Task<ScenarioContext?> GetContext(long userId, CancellationToken ct)
         {
             ScenarioContext? context = null;

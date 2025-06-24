@@ -36,13 +36,18 @@ namespace Homework
             IToDoListService toDoListService = new ToDoListService(toDoListRepository);
             var userService = new UserService(userRepository);
             var toDoService = new ToDoService(20, 100, toDoRepository);
-            var scenarios = new[] { new AddTaskScenario(userService, toDoService) };
+            var scenarios = new IScenario[]
+            { 
+                new AddTaskScenario(userService, toDoService, toDoListService),
+                new AddListScenario(userService, toDoListService)
+            };
+
             var updateHandler = new UpdateHandler(userService, toDoService, new ToDoReportService(toDoRepository), scenarios, contextRepository, toDoListService);
             CancellationTokenSource cancellationToken = new CancellationTokenSource();
             CancellationToken ct = cancellationToken.Token;
             ReceiverOptions receiverOptions = new ReceiverOptions()
             {
-                AllowedUpdates = [UpdateType.Message],
+                AllowedUpdates = [UpdateType.Message, UpdateType.CallbackQuery],
                 DropPendingUpdates = true
             };
             await SetBotCommands(telegramBotClinet);

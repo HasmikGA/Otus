@@ -104,7 +104,7 @@ namespace TaskBot.TelegramBot
                 throw new InvalidDataException("Unauthorized user");
             }
 
-            var context = await this.contextRepository.GetContext(telegramUserId, ct);
+            var context = await this.contextRepository.GetContext(callbackQuery.Message.Chat.Id, ct);
             if (context != null)
             {
                 await this.ProcessScenario(botClient, context, update, ct);
@@ -168,7 +168,7 @@ namespace TaskBot.TelegramBot
                 return;
             }
 
-            var context = await this.contextRepository.GetContext(update.Message.From.Id, ct);
+            var context = await this.contextRepository.GetContext(update.Message.Chat.Id, ct);
             if (context != null)
             {
                 await this.ProcessScenario(botClient, context, update, ct);
@@ -257,6 +257,12 @@ namespace TaskBot.TelegramBot
 
         public async Task ProcessScenario(ITelegramBotClient botClient, ScenarioContext context, Update update, CancellationToken ct)
         {
+            var message = update.Type == UpdateType.CallbackQuery ? update.CallbackQuery.Message : update.Message;
+            if (!await this.contextRepository.HasContext(message.Chat.Id, ct))
+            {
+                await this.contextRepository.SetContext(message.Chat.Id, context, ct);
+            }
+
             var scenario = GetScenario(context.CurrentScenario);
             var result = await scenario.HandleMessageAsync(botClient, context, update, ct);
             if (result == ScenarioResult.Transition)
@@ -273,7 +279,7 @@ namespace TaskBot.TelegramBot
 
                 };
 
-                await botClient.SendMessage(update.Message.Chat, string.Empty, replyMarkup: reply, cancellationToken: ct);
+                await botClient.SendMessage(message.Chat, "For cancel press cancel.", replyMarkup: reply, cancellationToken: ct);
             }
 
             if (result == ScenarioResult.Completed)
@@ -293,8 +299,8 @@ namespace TaskBot.TelegramBot
 
                 };
 
-                await botClient.SendMessage(update.Message.Chat, string.Empty, replyMarkup: reply, cancellationToken: ct);
-                this.contextRepository.ResetContext(update.Message.From.Id, ct);
+                await botClient.SendMessage(message.Chat, "_:_", replyMarkup: reply, cancellationToken: ct);
+                this.contextRepository.ResetContext(message.Chat.Id, ct);
             }
         }
 
@@ -314,7 +320,7 @@ namespace TaskBot.TelegramBot
 
             };
             await botClient.SendMessage(update.Message.Chat, string.Empty, replyMarkup: reply, cancellationToken: ct);
-            this.contextRepository.ResetContext(update.Message.From.Id, ct);
+            this.contextRepository.ResetContext(update.Message.Chat.Id, ct);
         }
 
         public async Task ProvideInfo(ITelegramBotClient botClient, Chat chat, CancellationToken ct)
