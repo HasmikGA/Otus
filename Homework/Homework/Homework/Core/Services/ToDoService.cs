@@ -1,15 +1,7 @@
-﻿
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+﻿using System.Text.RegularExpressions;
 using TaskBot.Core.DataAccess;
 using TaskBot.Core.Entities;
 using TaskBot.Core.Exceptions;
-
 
 namespace TaskBot.Core.Services
 {
@@ -21,7 +13,6 @@ namespace TaskBot.Core.Services
         private int itemLengthLimit;
         private readonly IToDoRepository toDoRepository;
 
-
         public ToDoService(int itemCountLimit, int itemLengthLimit, IToDoRepository toDoRepository)
         {
             this.itemCountLimit = itemCountLimit;
@@ -29,13 +20,13 @@ namespace TaskBot.Core.Services
             this.toDoRepository = toDoRepository;
         }
 
-
-        public async Task<ToDoItem> Add(ToDoUser user, string name, DateTime deadline, CancellationToken ct)
+        public async Task<ToDoItem> Add(ToDoUser user, string name, DateTime deadline, ToDoList? list, CancellationToken ct)
         {
             if (toDoItems.Count > itemCountLimit)
             {
                 throw new TaskCountLimitException(itemCountLimit);
             }
+
             if (name.Length > itemLengthLimit)
             {
                 throw new TaskLengthLimitException(name.Length, itemLengthLimit);
@@ -50,7 +41,6 @@ namespace TaskBot.Core.Services
             }
 
             ValidateString(name);
-
 
             ToDoItem toDoItem = new ToDoItem()
             {
@@ -76,7 +66,12 @@ namespace TaskBot.Core.Services
                     break;
                 }
             }
-
+        }
+        public async Task<IReadOnlyList<ToDoItem>> GetByUserIdAndList(Guid userId, Guid? listId, CancellationToken ct)
+        {
+            var toDoItemList = await this.toDoRepository.GetByUserIdAndList(userId, listId, ct);
+           
+            return toDoItemList;
         }
         public async Task<IReadOnlyList<ToDoItem>> GetActiveByUserId(Guid userId, CancellationToken ct)
         {
@@ -84,6 +79,7 @@ namespace TaskBot.Core.Services
 
             return activeList;
         }
+
         public async Task<IReadOnlyList<ToDoItem>> GetAllByUserId(Guid userId, CancellationToken ct)
         {
             var allList = await toDoRepository.GetAllByUserId(userId, ct);
@@ -102,6 +98,7 @@ namespace TaskBot.Core.Services
                 }
             }
         }
+
         private void ValidateString(string taskName)
         {
             bool containsSpecialChars = Regex.IsMatch(taskName, @"[!@#$%^&*(),.?""':;{}|<>]");

@@ -17,6 +17,8 @@ namespace TaskBot.Core.DataAccess
         void Delete(Guid id, CancellationToken ct);
         bool ExistsByName(Guid userId, string name, CancellationToken ct);
         Task<int> CountActive(Guid userId, CancellationToken ct);
+        Task<IReadOnlyList<ToDoItem>> GetByUserIdAndList(Guid userId, Guid? listId, CancellationToken ct);
+
 
 
     }

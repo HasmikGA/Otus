@@ -84,6 +84,19 @@ namespace TaskBot.Infrastructure.DataAccess
             }
             return allList;
         }
+        public async Task<IReadOnlyList<ToDoItem>> GetByUserIdAndList(Guid userId, Guid? listId, CancellationToken ct)
+        {
+            var toDoItemList = new List<ToDoItem>();
+            
+            for (int i = 0; i < toDoItems.Count; i++)
+            {
+                if (toDoItems[i].User?.UserId == userId && toDoItems[i]?.List?.Id == listId)
+                {
+                    toDoItemList.Add(toDoItems[i]);
+                }
+            }
+            return toDoItemList;
+        }
 
         public void Update(ToDoItem item, CancellationToken ct)
         {

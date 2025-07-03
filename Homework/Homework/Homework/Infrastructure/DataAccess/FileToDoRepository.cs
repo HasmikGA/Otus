@@ -152,7 +152,25 @@ namespace TaskBot.Infrastructure.DataAccess
             }
             return allList;
         }
-
+        public async Task<IReadOnlyList<ToDoItem>> GetByUserIdAndList(Guid userId, Guid? listId, CancellationToken ct)
+        {
+            var toDoItemList = new List<ToDoItem>();
+            var path = Path.Combine(ItemFolderName);
+            if (Directory.Exists(path))
+            {
+                var files = Directory.GetFiles(path);
+                for(int i  = 0; i < files.Length;i++)
+                {
+                    var toDoItemListJson = File.ReadAllText(files[i]);
+                    var item = JsonSerializer.Deserialize<ToDoItem>(toDoItemListJson);
+                    if(item?.User?.UserId == userId && item?.List?.Id == listId)
+                    {
+                        toDoItemList.Add(item);
+                    }
+                }
+            }
+            return toDoItemList;
+        }
         public void Update(ToDoItem item, CancellationToken ct)
         {
             Add(item, ct);
