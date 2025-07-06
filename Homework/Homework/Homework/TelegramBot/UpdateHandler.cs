@@ -1,20 +1,14 @@
-﻿
-using System;
-using System.Diagnostics;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Threading;
-using TaskBot.Core.Entities;
+﻿using TaskBot.Core.Entities;
 using TaskBot.Core.Exceptions;
 using TaskBot.Core.Services;
+using TaskBot.Helper;
+using TaskBot.TelegramBot.Dto;
+using TaskBot.TelegramBot.Scenarios;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
-using System.Collections;
-using TaskBot.TelegramBot.Scenarios;
-using TaskBot.TelegramBot.Dto;
 
 namespace TaskBot.TelegramBot
 {
@@ -22,6 +16,8 @@ namespace TaskBot.TelegramBot
 
     internal class UpdateHandler : IUpdateHandler
     {
+        private int pageSize = 5;
+
         public event MessageEventHandler OnHandleUpdateStarted = null;
 
         public event MessageEventHandler OnHandleUpdateCompleted = null;
@@ -112,19 +108,48 @@ namespace TaskBot.TelegramBot
             }
 
             var callbackDto = CallbackDto.FromString(callbackQuery.Data);
+            var message = update.Type == UpdateType.CallbackQuery ? update.CallbackQuery.Message : update.Message;
 
             if (callbackDto.Action == "show")
             {
-                var toDoListDto = ToDoListCallbackDto.FromString(callbackQuery.Data);
+                var toDoListDto = PagedListCallbackDto.FromString(callbackQuery.Data);
                 var toDoItems = await this.toDoService.GetByUserIdAndList(user.UserId, toDoListDto.ToDoListId, ct);
 
-                for (int i = 0; i < toDoItems.Count; i++)
-                {
-                    await botClient.SendMessage(update.Message.Chat.Id, $"{i + 1}.{toDoItems[i].Name} - {toDoItems[i].CreatedAt} - <code>{toDoItems[i].Id}</code>", ParseMode.Html, cancellationToken: ct);
-                }
+                var itemsCallbackDto = toDoItems.Select(item => new KeyValuePair<string, string>(item.Name, new ToDoItemCallbackDto { Action = "showtask", ToDoItemId = item.Id }.ToString()));
+                var reply = this.BuildPagedButtons(itemsCallbackDto, toDoListDto);
+
+                await botClient.EditMessageText(message.Chat.Id, message.MessageId, $"Here is your tasks", replyMarkup: reply, cancellationToken: ct);
             }
 
-            if(callbackDto.Action == "addlist")
+            if (callbackDto.Action == "showtask")
+            {
+                var toDoItemDto = ToDoItemCallbackDto.FromString(callbackQuery.Data);
+                var toDoItem = await this.toDoService.Get(user.UserId, toDoItemDto.ToDoItemId.Value, ct);
+
+                var reply = new InlineKeyboardMarkup(new[]
+                {
+                    InlineKeyboardButton.WithCallbackData("Complete",new ToDoItemCallbackDto{Action = "completetask", ToDoItemId = toDoItem.Id}.ToString()),
+                    InlineKeyboardButton.WithCallbackData("Delete",new ToDoItemCallbackDto{Action = "deletetask", ToDoItemId = toDoItem.Id}.ToString())
+                });
+
+                await botClient.SendMessage(message.Chat.Id, $"Deadline is - {toDoItem.Deadline} \n CreatedAt - {toDoItem.CreatedAt} \n Id is - {toDoItem.Id}", replyMarkup: reply, cancellationToken: ct);
+                //await botClient.SendMessage(message.Chat.Id, $"{toDoItem.CreatedAt} - < code >{toDoItem.Id}</ code >", ParseMode.Html, replyMarkup: reply, cancellationToken: ct);
+            }
+
+            if (callbackDto.Action == "completetask")
+            {
+                var toDoItemDto = ToDoItemCallbackDto.FromString(callbackQuery.Data);
+                await this.toDoService.MarkCompleted(user.UserId, toDoItemDto.ToDoItemId.Value, ct);
+
+            }
+
+            if (callbackDto.Action == "deletetask")
+            {
+                var toDoItemDto = ToDoItemCallbackDto.FromString(callbackQuery.Data);
+                await this.toDoService.Delete(toDoItemDto.ToDoItemId.Value, user.UserId, ct);
+            }
+
+            if (callbackDto.Action == "addlist")
             {
                 await this.ProcessScenario(botClient, new ScenarioContext(ScenarioType.AddList), update, ct);
             }
@@ -133,7 +158,36 @@ namespace TaskBot.TelegramBot
             {
                 await this.ProcessScenario(botClient, new ScenarioContext(ScenarioType.DeleteList), update, ct);
             }
+            if (callbackDto.Action == "show_completed")
+            {
+               var items =  await this.toDoService.FindCompleted(user.UserId,ct);
+            }
 
+        }
+
+        private InlineKeyboardMarkup BuildPagedButtons(IEnumerable<KeyValuePair<string, string>> callbackData, PagedListCallbackDto listDto)
+        {
+            var totalPages = (callbackData.Count() + this.pageSize - 1) / this.pageSize;
+            var batchItems = callbackData.GetBatchByNumbe(this.pageSize, listDto.Page);
+            var items = batchItems.Select(item => InlineKeyboardButton.WithCallbackData(item.Key, item.Value));
+            var leftRight = new List<InlineKeyboardButton>();
+
+            if (listDto.Page > 0)
+            {
+                leftRight.Add(InlineKeyboardButton.WithCallbackData("Left", new PagedListCallbackDto { Action = listDto.Action, Page = listDto.Page - 1 }.ToString()));
+            }
+
+            if (listDto.Page < totalPages - 1)
+            {
+                leftRight.Add(InlineKeyboardButton.WithCallbackData("Right", new PagedListCallbackDto { Action = listDto.Action, Page = listDto.Page + 1 }.ToString()));
+            }
+
+            return new InlineKeyboardMarkup(new[]
+            {
+                items,
+                leftRight,
+                new [] { InlineKeyboardButton.WithCallbackData("Colpleted tasks",new  PagedListCallbackDto { Action = "show_completed", ToDoListId = listDto.ToDoListId, Page = 0 }.ToString())}
+            });
         }
 
         private async Task OnUnknown(Update update)
@@ -149,14 +203,6 @@ namespace TaskBot.TelegramBot
             if (command.Contains("addtask"))
             {
                 command = "/addtask";
-            }
-            else if (command.Contains("removetask"))
-            {
-                command = "/removetask";
-            }
-            else if (command.Contains("completetask"))
-            {
-                command = "/completetask";
             }
             else if (command.Contains("find"))
             {
@@ -214,14 +260,6 @@ namespace TaskBot.TelegramBot
                     await ShowTasks(botClient, update, ct);
                     break;
 
-                case "/removetask":
-                    await RemoveTask(botClient, update, ct);
-                    break;
-
-                case "/completetask":
-                    await CompleteTask(botClient, update, ct);
-                    break;
-
                 case "/report":
                     await ReportTasks(botClient, update, ct);
                     break;
@@ -238,7 +276,6 @@ namespace TaskBot.TelegramBot
                     Console.WriteLine("The command isn`t correct.");
                     break;
             }
-
 
         }
 
@@ -273,10 +310,12 @@ namespace TaskBot.TelegramBot
                     {
                         new[]
                         {
-                             new KeyboardButton("/cancel")
+                            new KeyboardButton("/addtask"),
+                            new KeyboardButton ("/show"),
+                            new KeyboardButton ("/report"),
+                            new KeyboardButton("/cancel")
                         }
                     }
-
                 };
 
                 await botClient.SendMessage(message.Chat, "For cancel press cancel.", replyMarkup: reply, cancellationToken: ct);
@@ -284,28 +323,13 @@ namespace TaskBot.TelegramBot
 
             if (result == ScenarioResult.Completed)
             {
-                var reply = new ReplyKeyboardMarkup
-                {
-                    Keyboard = new[]
-                       {
-                            new[]
-                            {
-                                 new KeyboardButton("/addtask"),
-                                 new KeyboardButton ("/show"),
-                                 new KeyboardButton ("/report")
-
-                            }
-                        }
-
-                };
-
-                await botClient.SendMessage(message.Chat, "_:_", replyMarkup: reply, cancellationToken: ct);
                 this.contextRepository.ResetContext(message.Chat.Id, ct);
             }
         }
 
         public async Task Cancel(ITelegramBotClient botClient, Update update, CancellationToken ct)
         {
+            var message = update.Type == UpdateType.CallbackQuery ? update.CallbackQuery.Message : update.Message;
             var reply = new ReplyKeyboardMarkup
             {
                 Keyboard = new[]
@@ -319,8 +343,8 @@ namespace TaskBot.TelegramBot
                         }
 
             };
-            await botClient.SendMessage(update.Message.Chat, string.Empty, replyMarkup: reply, cancellationToken: ct);
-            this.contextRepository.ResetContext(update.Message.Chat.Id, ct);
+            await botClient.SendMessage(message.Chat, string.Empty, replyMarkup: reply, cancellationToken: ct);
+            this.contextRepository.ResetContext(message.Chat.Id, ct);
         }
 
         public async Task ProvideInfo(ITelegramBotClient botClient, Chat chat, CancellationToken ct)
@@ -349,9 +373,9 @@ namespace TaskBot.TelegramBot
             {
                 new[]
                 {
-                    InlineKeyboardButton.WithCallbackData("Whithout list", new ToDoListCallbackDto { Action = "show", ToDoListId = null }.ToString()),
+                    InlineKeyboardButton.WithCallbackData("Whithout list", new PagedListCallbackDto { Action = "show", ToDoListId = null }.ToString()),
                 },
-                lists.Select(x => InlineKeyboardButton.WithCallbackData(x.Name, new ToDoListCallbackDto { Action = "show", ToDoListId = x.Id }.ToString())),
+                lists.Select(x => InlineKeyboardButton.WithCallbackData(x.Name, new PagedListCallbackDto { Action = "show", ToDoListId = x.Id }.ToString())),
                 new []
                 {
                     InlineKeyboardButton.WithCallbackData("Add","addlist"),
@@ -362,56 +386,12 @@ namespace TaskBot.TelegramBot
 
             await botClient.SendMessage(chat, "Choose the list:", replyMarkup: reply, cancellationToken: ct);
 
-            IReadOnlyList<ToDoItem> toDoList = await toDoService.GetActiveByUserId(user.UserId, ct);
-
-            for (int i = 0; i < toDoList.Count; i++)
-            {
-                await botClient.SendMessage(chat.Id, $"{i + 1}.{toDoList[i].Name} - {toDoList[i].CreatedAt} - <code>{toDoList[i].Id}</code>", ParseMode.Html, cancellationToken: ct);
-            }
         }
-
         public async Task AddTask(ITelegramBotClient botClient, Update update, CancellationToken ct)
         {
             var context = new ScenarioContext(ScenarioType.AddTask);
             await this.ProcessScenario(botClient, context, update, ct);
 
-        }
-
-        public async Task RemoveTask(ITelegramBotClient botClient, Update update, CancellationToken ct)
-        {
-            Chat chat = update.Message.Chat;
-            string messageText = update.Message.Text;
-            var user = await userService.GetUser(update.Message.From.Id, ct);
-            int taskNumber;
-            string number = messageText.Substring(messageText.IndexOf(' ') + 1);
-            bool isTaskNumber = int.TryParse(number, out taskNumber);
-            if (!isTaskNumber)
-            {
-                await botClient.SendMessage(chat, "Wrong number!", cancellationToken: ct);
-            }
-            IReadOnlyList<ToDoItem> toDoList = await toDoService.GetActiveByUserId(user.UserId, ct);
-            if (taskNumber > toDoList.Count && taskNumber < 1)
-            {
-                throw new IndexOutOfRangeException("The task number isn`t in correct form");
-            }
-            int indexOfNum = taskNumber - 1;
-            var itemToRemove = toDoList[indexOfNum];
-            await botClient.SendMessage(chat, $"The task \"{itemToRemove}\" has been removed:", cancellationToken: ct);
-            await toDoService.Delete(toDoList[taskNumber - 1].Id, ct);
-
-        }
-        public async Task CompleteTask(ITelegramBotClient botClient, Update update, CancellationToken ct)
-        {
-            Chat chat = update.Message.Chat;
-            string messageText = update.Message.Text;
-            Guid taskId;
-            string id = messageText.Substring(messageText.IndexOf(' ') + 1);
-            bool isTaskId = Guid.TryParse(id, out taskId);
-            if (!isTaskId)
-            {
-                await botClient.SendMessage(chat, "Wrong Id!", cancellationToken: ct);
-            }
-            await toDoService.MarkCompleted(taskId, ct);
         }
 
         public async Task ShowAllTasks(ITelegramBotClient botClient, Update update, CancellationToken ct)

@@ -71,7 +71,7 @@ namespace TaskBot.TelegramBot.Scenarios
                             var items = await this.toDoService.GetByUserIdAndList(userId, listId, ct);
                             for (int i = 0; i < items.Count; i++)
                             {
-                                await this.toDoService.Delete(items[i].Id, ct);
+                                await this.toDoService.Delete(items[i].Id, userId, ct);
                             }
                             break;
                         case "No":

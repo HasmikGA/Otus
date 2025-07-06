@@ -11,7 +11,7 @@ namespace TaskBot.Infrastructure.DataAccess
         {
             this.listFoldername = listFoldername;
 
-            if (!Directory.Exists(Path.Combine(listFoldername)))
+            if (!Directory.Exists(listFoldername))
             {
                 Directory.CreateDirectory(listFoldername);
             }
@@ -22,8 +22,6 @@ namespace TaskBot.Infrastructure.DataAccess
             string fileNameList = $"{list.Id}.json";
             var path = Path.Combine(listFoldername, fileNameList);
 
-            using (File.Create(path)) ;
-
             var jsonList = JsonSerializer.Serialize(list);
 
             File.WriteAllText(path, jsonList);
@@ -33,13 +31,12 @@ namespace TaskBot.Infrastructure.DataAccess
 
         public Task Delete(Guid id, CancellationToken ct)
         {
-            var path = Path.Combine(listFoldername);
-            if (!Directory.Exists(path))
+            if (!Directory.Exists(listFoldername))
             {
                 return Task.CompletedTask;
             }
 
-            var lists = Directory.GetFiles(path);
+            var lists = Directory.GetFiles(listFoldername);
             for (int i = 0; i < lists.Length; i++)
             {
                 var toDoListJson = File.ReadAllText(lists[i]);
@@ -66,7 +63,7 @@ namespace TaskBot.Infrastructure.DataAccess
             foreach (var list in lists)
             {
                 var toDoListJson = File.ReadAllText(list);
-                var toDoList = JsonSerializer.Deserialize<ToDoList>(list);
+                var toDoList = JsonSerializer.Deserialize<ToDoList>(toDoListJson);
                 if (toDoList?.User.UserId == userId && toDoList.Name == name)
                 {
                     return Task.FromResult(true);
@@ -100,7 +97,7 @@ namespace TaskBot.Infrastructure.DataAccess
 
         public Task<IReadOnlyList<ToDoList>> GetByUserId(Guid userId, CancellationToken ct)
         {
-            var path = Path.Combine(listFoldername);
+            var path = listFoldername;
             var userToDoList = new List<ToDoList>();
 
             if (Directory.Exists(path))

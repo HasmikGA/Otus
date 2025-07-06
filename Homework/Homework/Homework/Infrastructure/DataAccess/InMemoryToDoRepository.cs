@@ -23,7 +23,7 @@ namespace TaskBot.Infrastructure.DataAccess
             return activetList.Count;
         }
 
-        public void Delete(Guid id, CancellationToken ct)
+        public void Delete(Guid id, Guid userId, CancellationToken ct)
         {
             for (int i = 0; i < toDoItems.Count; i++)
             {
