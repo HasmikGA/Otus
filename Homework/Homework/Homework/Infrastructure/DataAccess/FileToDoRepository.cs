@@ -15,18 +15,19 @@ namespace TaskBot.Infrastructure.DataAccess
 
         private string ItemFolderName { get; set; }
 
-        public FileToDoRepository(string itemFolederName)
+        public FileToDoRepository(string itemFolderName)
         {
-            ItemFolderName = itemFolederName;
+            ItemFolderName = itemFolderName;
 
-            if (!Directory.Exists(Path.Combine(itemFolederName)))
+            if (!Directory.Exists(Path.Combine(ItemFolderName)))
             {
-                Directory.CreateDirectory(itemFolederName);
+                Directory.CreateDirectory(itemFolderName);
             }
         }
 
         public void Add(ToDoItem item, CancellationToken ct)
         {
+
             string itemSubFolderName = $"{item?.User?.UserId}";
 
             var pathFolder = Path.Combine(this.ItemFolderName, itemSubFolderName);
@@ -37,11 +38,9 @@ namespace TaskBot.Infrastructure.DataAccess
 
             var pathFile = Path.Combine(pathFolder, itemFileName);
 
-            using (File.Create(pathFile))
-            {
-                var json = JsonSerializer.Serialize(item);
-                File.WriteAllText(pathFile, json);
-            }
+            var json = JsonSerializer.Serialize(item);
+            File.WriteAllText(pathFile, json);
+
 
         }
 
@@ -51,18 +50,19 @@ namespace TaskBot.Infrastructure.DataAccess
             return activetList.Count;
         }
 
-        public void Delete(Guid id, CancellationToken ct)
+        public void Delete(Guid id, Guid userId, CancellationToken ct)
         {
-            var path = Path.Combine(ItemFolderName, $"{id}.json");
+            var userFolder = Path.Combine(ItemFolderName, userId.ToString());
+            var path = Path.Combine(userFolder, $"{id}.json");
+
             if (File.Exists(path))
             {
                 File.Delete(path);
             }
-
         }
         public bool ExistsByName(Guid userId, string name, CancellationToken ct)
         {
-            var path = Path.Combine(ItemFolderName);
+            var path = Path.Combine(ItemFolderName, userId.ToString());
 
             if (Directory.Exists(path))
             {
@@ -72,7 +72,7 @@ namespace TaskBot.Infrastructure.DataAccess
                 {
                     var toDoItemJson = File.ReadAllText(files[i]);
                     var item = JsonSerializer.Deserialize<ToDoItem>(toDoItemJson);
-                    if (item != null && item.User.UserId == userId && item.Name == name)
+                    if (item != null && item?.User?.UserId == userId && item.Name == name)
                     {
                         return true;
                     }
@@ -81,11 +81,11 @@ namespace TaskBot.Infrastructure.DataAccess
             return false;
         }
 
-        public async Task<IReadOnlyList<ToDoItem>> Find(Guid userId, Func<ToDoItem, bool> predicate, CancellationToken ct)
+        public Task<IReadOnlyList<ToDoItem>> Find(Guid userId, Func<ToDoItem, bool> predicate, CancellationToken ct)
         {
             List<ToDoItem> pridicateList = new List<ToDoItem>();
 
-            var path = Path.Combine(ItemFolderName);
+            var path = Path.Combine(ItemFolderName, userId.ToString());
 
             if (Directory.Exists(path))
             {
@@ -102,14 +102,14 @@ namespace TaskBot.Infrastructure.DataAccess
                 }
             }
 
-            return pridicateList;
+            return Task.FromResult<IReadOnlyList<ToDoItem>>(pridicateList);
         }
 
-        public async Task<IReadOnlyList<ToDoItem>> GetActiveByUserId(Guid userId, CancellationToken ct)
+        public Task<IReadOnlyList<ToDoItem>> GetActiveByUserId(Guid userId, CancellationToken ct)
         {
             List<ToDoItem> activetList = new List<ToDoItem>();
 
-            var path = Path.Combine(ItemFolderName);
+            var path = Path.Combine(ItemFolderName, userId.ToString());
 
             if (Directory.Exists(path))
             {
@@ -126,15 +126,15 @@ namespace TaskBot.Infrastructure.DataAccess
 
             }
 
-            return activetList;
+            return Task.FromResult<IReadOnlyList<ToDoItem>>(activetList);
         }
 
-        public async Task<IReadOnlyList<ToDoItem>> GetAllByUserId(Guid userId, CancellationToken ct)
+        public Task<IReadOnlyList<ToDoItem>> GetAllByUserId(Guid userId, CancellationToken ct)
         {
 
             List<ToDoItem> allList = new List<ToDoItem>();
 
-            var path = Path.Combine(ItemFolderName);
+            var path = Path.Combine(ItemFolderName, userId.ToString());
 
             if (Directory.Exists(path))
             {
@@ -150,26 +150,27 @@ namespace TaskBot.Infrastructure.DataAccess
                 }
 
             }
-            return allList;
+            return Task.FromResult<IReadOnlyList<ToDoItem>> (allList);
         }
-        public async Task<IReadOnlyList<ToDoItem>> GetByUserIdAndList(Guid userId, Guid? listId, CancellationToken ct)
+        public Task<IReadOnlyList<ToDoItem>> GetByUserIdAndList(Guid userId, Guid? listId, CancellationToken ct)
         {
             var toDoItemList = new List<ToDoItem>();
-            var path = Path.Combine(ItemFolderName);
+
+            var path = Path.Combine(ItemFolderName, userId.ToString());
             if (Directory.Exists(path))
             {
                 var files = Directory.GetFiles(path);
-                for(int i  = 0; i < files.Length;i++)
+                for (int i = 0; i < files.Length; i++)
                 {
                     var toDoItemListJson = File.ReadAllText(files[i]);
                     var item = JsonSerializer.Deserialize<ToDoItem>(toDoItemListJson);
-                    if(item?.User?.UserId == userId && item?.List?.Id == listId)
+                    if (item?.User?.UserId == userId && (!listId.HasValue || listId.Value == Guid.Empty || item?.List?.Id == listId))
                     {
                         toDoItemList.Add(item);
                     }
                 }
             }
-            return toDoItemList;
+            return Task.FromResult<IReadOnlyList<ToDoItem>>(toDoItemList);
         }
         public void Update(ToDoItem item, CancellationToken ct)
         {

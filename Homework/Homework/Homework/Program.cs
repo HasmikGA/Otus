@@ -97,12 +97,7 @@ namespace Homework
             new BotCommand { Command = "/start", Description = "Запустить бота" },
             new BotCommand { Command = "/help", Description = "Получить помощь" },
             new BotCommand { Command = "/info", Description = "Получить информацию  " },
-            new BotCommand { Command = "/addtask", Description = "Добавить задачу" },
-            new BotCommand { Command = "/removetask", Description = "Удалить задачу" },
-            new BotCommand { Command = "/showalltasks", Description = "Показать все задачи" },
-            new BotCommand { Command = "/showtasks", Description = "Показать активные задачи" },
-            new BotCommand { Command = "/report", Description = "Получить количество задач" },
-
+           
         };
 
             await botClient.SetMyCommands(commands);
