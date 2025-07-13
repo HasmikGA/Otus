@@ -133,7 +133,6 @@ namespace TaskBot.TelegramBot
                 });
 
                 await botClient.SendMessage(message.Chat.Id, $"Deadline is - {toDoItem.Deadline} \n CreatedAt - {toDoItem.CreatedAt} \n Id is - {toDoItem.Id}", replyMarkup: reply, cancellationToken: ct);
-                //await botClient.SendMessage(message.Chat.Id, $"{toDoItem.CreatedAt} - < code >{toDoItem.Id}</ code >", ParseMode.Html, replyMarkup: reply, cancellationToken: ct);
             }
 
             if (callbackDto.Action == "completetask")
@@ -160,7 +159,7 @@ namespace TaskBot.TelegramBot
             }
             if (callbackDto.Action == "show_completed")
             {
-               var items =  await this.toDoService.FindCompleted(user.UserId,ct);
+               var items =  await this.toDoService.GetCompleted(user.UserId,ct);
             }
 
         }
@@ -168,7 +167,7 @@ namespace TaskBot.TelegramBot
         private InlineKeyboardMarkup BuildPagedButtons(IEnumerable<KeyValuePair<string, string>> callbackData, PagedListCallbackDto listDto)
         {
             var totalPages = (callbackData.Count() + this.pageSize - 1) / this.pageSize;
-            var batchItems = callbackData.GetBatchByNumbe(this.pageSize, listDto.Page);
+            var batchItems = callbackData.GetBatchByNumber(this.pageSize, listDto.Page);
             var items = batchItems.Select(item => InlineKeyboardButton.WithCallbackData(item.Key, item.Value));
             var leftRight = new List<InlineKeyboardButton>();
 

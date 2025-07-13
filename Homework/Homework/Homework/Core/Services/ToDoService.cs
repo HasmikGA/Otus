@@ -74,7 +74,7 @@ namespace TaskBot.Core.Services
             return activeList;
         }
 
-        public async Task<IReadOnlyList<ToDoItem>> FindCompleted(Guid userId, CancellationToken ct)
+        public async Task<IReadOnlyList<ToDoItem>> GetCompleted(Guid userId, CancellationToken ct)
         {
             var result = await toDoRepository.Find(userId, (item) => item.State == ToDoItemState.Completed, ct);
             return result;
