@@ -1,24 +1,24 @@
 ﻿CREATE TABLE "ToDoUser" (
-"UserId" SERIAL PRIMARY KEY,
+"UserId" UUID PRIMARY KEY,
 "TelegramUserId" BIGINT NOT NULL,
 "TelegramUserName" TEXT,
 "RegisteredAt" TIMESTAMP NOT NULL DEFAULT NOW()
 )
 CREATE TABLE "ToDoList" (
-"Id" SERIAL PRIMARY KEY,
+"Id" UUID PRIMARY KEY,
 "Name" TEXT NOT NULL,
-"UserId" SERIAL NOT NULL REFERENCES "ToDoUser"("UserId") ON DELETE CASCADE,
+"UserId" UUID NOT NULL REFERENCES "ToDoUser"("UserId"),
 "CreatedAt" TIMESTAMP NOT NULL DEFAULT NOW())
 
 CREATE TABLE "ToDoItem" (
-"Id" SERIAL PRIMARY KEY,
-"UserId" SERIAL REFERENCES "ToDoUser" ("UserId")  ON DELETE CASCADE,
+"Id" UUID PRIMARY KEY,
+"UserId" UUID REFERENCES "ToDoUser" ("UserId"),
 "Name" TEXT,
 "CreatedAt" TIMESTAMP NOT NULL DEFAULT NOW(),
 "State" INT NOT NULL DEFAULT 0,
 "StateChangedAt" TIMESTAMP,
 "Deadline" TIMESTAMP NOT NULL,
-"ListId" SERIAL REFERENCES "ToDoList" ("Id") ON DELETE CASCADE )
+"ListId" UUID REFERENCES "ToDoList" ("Id") )
 
 CREATE UNIQUE INDEX "Ix_ToDoUser_TelegramUserId"
 ON "ToDoUser"("TelegramUserId")
@@ -28,3 +28,6 @@ ON "ToDoItem"("ListId")
 
 CREATE INDEX "Ix_ToDoItem_UserId" 
 ON "ToDoItem"("UserId")
+
+CREATE INDEX "Ix_ToDoList_UserId"
+ON "ToDoList"("UserId")

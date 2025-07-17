@@ -1,17 +1,17 @@
 ﻿SELECT COUNT(*)
 FROM "ToDoItem" i
-WHERE i."UserId" IN (SELECT u."UserId" FROM "ToDoUser" u)
-  AND i."State" = 0;
+JOIN "ToDoUser" u ON i."UserId"=u."UserId"
+WHERE i."State"=0;
 
 SELECT * FROM "ToDoItem" i
-WHERE i."UserId" IN(SELECT u."UserId" From "ToDoUser" u);
+JOIN "ToDoUser" u ON i."UserId" = u."UserId";
 
 SELECT * FROM "ToDoItem" i
-WHERE i."UserId" IN(SELECT u."UserId" FROM "ToDoUser" u)
-AND i."UserId" IN(SELECT l."UserId" FROM "ToDoList" l);
+JOIN "ToDoUser" u ON i."UserId"= u."UserId"
+JOIN "ToDoList" l ON i."UserId" = l."UserId";
 
 DELETE FROM "ToDoItem" 
-WHERE "Id"= '1';
+WHERE "Id"= '7f3a5c1b-8e0f-4e8b-a1b1-3c7a2d932321';
 
 SELECT * FROM "ToDoItem"
 WHERE "Name" = 'Read the book';
