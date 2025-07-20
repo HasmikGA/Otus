@@ -2,7 +2,7 @@
 {
     internal class PagedListCallbackDto : ToDoListCallbackDto
     {
-        public int Page { get; set; }
+        public int Page { get; init; }
         public static new PagedListCallbackDto FromString(string input)
         {
             var basePart = ToDoListCallbackDto.FromString(input);

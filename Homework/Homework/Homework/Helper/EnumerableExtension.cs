@@ -9,19 +9,14 @@ namespace TaskBot.Helper
 {
     internal static class EnumerableExtension
     {
-        public static IEnumerable<T> GetBatchByNumbe<T>(this IEnumerable<T> collection, int batchSize, int batchNumber)
+        public static IEnumerable<T> GetBatchByNumber<T>(this IEnumerable<T> collection, int batchSize, int batchNumber)
         {
+            if (!(batchSize <= 0 && batchNumber < 0))
+            {
+                return collection;
+            }
+
             return collection.Skip(batchSize * batchNumber).Take(batchSize);
-            //var indexeNumbers = numbers.Select((value, index) => new { value, index });
-
-            //var quary = (from item in indexeNumbers
-            //             group item by item.index / batchSize into groupBySize
-            //             where groupBySize.Key == batchNumber
-            //             select groupBySize).FirstOrDefault();
-
-            //var batchList = quary.Select(g => g.value);
-
-            //return batchList;
         }
     }
 }
