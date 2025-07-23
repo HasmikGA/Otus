@@ -28,11 +28,13 @@ namespace Homework
             }
 
             var telegramBotClinet = new TelegramBotClient(clToken);
-            IUserRepository userRepository = new FileUserRepository("TaskBot-ToDoUser");
-            IToDoRepository toDoRepository = new FileToDoRepository("TaskBot-ToDoItems");
+            var dataContextFactory = new DataContextFactory();
+            
+            IUserRepository userRepository = new SqlUserRepository(dataContextFactory);
+            IToDoRepository toDoRepository = new SqlToDoRepository(dataContextFactory);
             IScenarioContextRepository contextRepository = new InMemoryScenarioContextRepository();
             IToDoReportService toDoReportService = new ToDoReportService(toDoRepository);
-            IToDoListRepository toDoListRepository = new FileToDoListRepository("TaskBot-ToDoList");
+            IToDoListRepository toDoListRepository = new SqlToDoListRepository(dataContextFactory);
             IToDoListService toDoListService = new ToDoListService(toDoListRepository);
             var userService = new UserService(userRepository);
             var toDoService = new ToDoService(20, 100, toDoRepository);

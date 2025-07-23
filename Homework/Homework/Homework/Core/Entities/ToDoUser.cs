@@ -1,6 +1,6 @@
 ﻿namespace TaskBot.Core.Entities
 {
-    internal class ToDoUser
+    public class ToDoUser
     {
         public Guid UserId { get; set; }
         public long TelegramUserId { get; set; }
