@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace TaskBot.Core.Entities
 {
-    internal class ToDoItem
+    public class ToDoItem
     {
         public Guid Id { get; set; }
         public ToDoUser? User { get; set; }

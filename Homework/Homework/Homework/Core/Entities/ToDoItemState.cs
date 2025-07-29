@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TaskBot.Core.Entities
 {
-    internal enum ToDoItemState
+    public enum ToDoItemState
     {
         Active,
         Completed,

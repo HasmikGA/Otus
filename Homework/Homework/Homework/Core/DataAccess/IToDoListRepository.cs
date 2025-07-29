@@ -9,7 +9,6 @@ namespace TaskBot.Core.DataAccess
 {
     internal interface IToDoListRepository
     {
-        //Если спика нет, то возвращает null
         Task<ToDoList?> Get(Guid id, CancellationToken ct);
         Task<IReadOnlyList<ToDoList>> GetByUserId(Guid userId, CancellationToken ct);
         Task Add(ToDoList list, CancellationToken ct);

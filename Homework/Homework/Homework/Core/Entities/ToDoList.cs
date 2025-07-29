@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TaskBot.Core.Entities
 {
-    internal class ToDoList
+    public class ToDoList
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
