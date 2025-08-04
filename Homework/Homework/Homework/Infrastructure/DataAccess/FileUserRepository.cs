@@ -21,7 +21,7 @@ namespace TaskBot.Infrastructure.DataAccess
                 Directory.CreateDirectory(folderNameUser);
             }
         }
-        public void Add(ToDoUser user, CancellationToken ct)
+        public Task Add(ToDoUser user, CancellationToken ct)
         {
             string fileNameUser = $"{user.UserId}.json";
             var path = Path.Combine(UserFolderName, fileNameUser);
@@ -31,9 +31,10 @@ namespace TaskBot.Infrastructure.DataAccess
             var json = JsonSerializer.Serialize(user);
 
             File.WriteAllText(path, json);
+            return Task.CompletedTask;
         }
 
-        public ToDoUser? GetUser(Guid userId, CancellationToken ct)
+        public Task<ToDoUser?> GetUser(Guid userId, CancellationToken ct)
         {
             var path = Path.Combine(UserFolderName);
             if (Directory.Exists(path))
@@ -46,7 +47,7 @@ namespace TaskBot.Infrastructure.DataAccess
                     var user = JsonSerializer.Deserialize<ToDoUser>(toDoUserJson);
                     if (user?.UserId == userId)
                     {
-                        return user;
+                        return Task.FromResult(user);
                     }
                 }
             }
@@ -54,7 +55,7 @@ namespace TaskBot.Infrastructure.DataAccess
             return null;
         }
 
-        public ToDoUser? GetUserByTelegramUserId(long telegramUserId, CancellationToken ct)
+        public Task<ToDoUser?> GetUserByTelegramUserId(long telegramUserId, CancellationToken ct)
         {
             var path = Path.Combine(UserFolderName);
             if (Directory.Exists(path))
@@ -67,7 +68,7 @@ namespace TaskBot.Infrastructure.DataAccess
                     var user = JsonSerializer.Deserialize<ToDoUser>(toDoUserJson);
                     if (user?.TelegramUserId == telegramUserId)
                     {
-                        return user;
+                        return Task.FromResult(user);
                     }
                 }
             }

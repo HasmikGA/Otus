@@ -12,9 +12,10 @@ namespace TaskBot.Infrastructure.DataAccess
     internal class InMemoryToDoRepository : IToDoRepository
     {
         private readonly List<ToDoItem> toDoItems = new List<ToDoItem>();
-        public void Add(ToDoItem item, CancellationToken ct)
+        public Task Add(ToDoItem item, CancellationToken ct)
         {
             toDoItems.Add(item);
+            return Task.CompletedTask;
         }
 
         public async Task<int> CountActive(Guid userId, CancellationToken ct)
@@ -23,7 +24,7 @@ namespace TaskBot.Infrastructure.DataAccess
             return activetList.Count;
         }
 
-        public void Delete(Guid id, Guid userId, CancellationToken ct)
+        public Task Delete(Guid id, Guid userId, CancellationToken ct)
         {
             for (int i = 0; i < toDoItems.Count; i++)
             {
@@ -33,17 +34,18 @@ namespace TaskBot.Infrastructure.DataAccess
                     break;
                 }
             }
+            return Task.CompletedTask;
         }
-        public bool ExistsByName(Guid userId, string name, CancellationToken ct)
+        public Task<bool> ExistsByName(Guid userId, string name, CancellationToken ct)
         {
             for (int i = 0; i < toDoItems.Count; i++)
             {
                 if (toDoItems[i].User?.UserId == userId && toDoItems[i].Name == name)
                 {
-                    return true;
+                    return Task.FromResult(true);
                 }
             }
-            return false;
+            return Task.FromResult(false);
         }
 
         public async Task<IReadOnlyList<ToDoItem>> Find(Guid userId, Func<ToDoItem, bool> predicate, CancellationToken ct)
@@ -98,7 +100,7 @@ namespace TaskBot.Infrastructure.DataAccess
             return toDoItemList;
         }
 
-        public void Update(ToDoItem item, CancellationToken ct)
+        public Task Update(ToDoItem item, CancellationToken ct)
         {
             for (int i = 0; i < toDoItems.Count; i++)
             {
@@ -109,6 +111,7 @@ namespace TaskBot.Infrastructure.DataAccess
                     break;
                 }
             }
+            return Task.CompletedTask;
         }
     }
 }

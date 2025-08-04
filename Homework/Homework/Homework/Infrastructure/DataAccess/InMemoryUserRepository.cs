@@ -12,38 +12,38 @@ namespace TaskBot.Infrastructure.DataAccess
     internal class InMemoryUserRepository : IUserRepository
     {
         private readonly List<ToDoUser> users = new List<ToDoUser>();
-        public void Add(ToDoUser user, CancellationToken ct)
+        public Task Add(ToDoUser user, CancellationToken ct)
         {
-            for(var i = 0; i < users.Count; i++)
+            for (var i = 0; i < users.Count; i++)
             {
                 if (users[i].TelegramUserId == user.TelegramUserId)
                 {
-                    return;
+                    return Task.CompletedTask;
                 }
             }
-
             users.Add(user);
+            return Task.CompletedTask;
         }
 
-        public ToDoUser? GetUser(Guid userId, CancellationToken ct)
+        public Task <ToDoUser?> GetUser(Guid userId, CancellationToken ct)
         {
             for (int i = 0; i < users.Count; i++)
             {
                 if (users[i].UserId == userId)
                 {
-                    return users[i];
+                    return Task.FromResult(users[i]);
                 }
             }
             return null;
         }
 
-        public ToDoUser? GetUserByTelegramUserId(long telegramUserId, CancellationToken ct)
+        public Task <ToDoUser?> GetUserByTelegramUserId(long telegramUserId, CancellationToken ct)
         {
             for (int i = 0; i < users.Count; i++)
             {
                 if (users[i].TelegramUserId == telegramUserId)
                 {
-                    return users[i];
+                    return Task.FromResult(users[i]);
                 }
             }
 

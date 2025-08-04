@@ -25,7 +25,7 @@ namespace TaskBot.Infrastructure.DataAccess
             }
         }
 
-        public void Add(ToDoItem item, CancellationToken ct)
+        public Task Add(ToDoItem item, CancellationToken ct)
         {
 
             string itemSubFolderName = $"{item?.User?.UserId}";
@@ -41,7 +41,7 @@ namespace TaskBot.Infrastructure.DataAccess
             var json = JsonSerializer.Serialize(item);
             File.WriteAllText(pathFile, json);
 
-
+            return Task.CompletedTask;
         }
 
         public async Task<int> CountActive(Guid userId, CancellationToken ct)
@@ -50,7 +50,7 @@ namespace TaskBot.Infrastructure.DataAccess
             return activetList.Count;
         }
 
-        public void Delete(Guid id, Guid userId, CancellationToken ct)
+        public Task Delete(Guid id, Guid userId, CancellationToken ct)
         {
             var userFolder = Path.Combine(ItemFolderName, userId.ToString());
             var path = Path.Combine(userFolder, $"{id}.json");
@@ -59,8 +59,9 @@ namespace TaskBot.Infrastructure.DataAccess
             {
                 File.Delete(path);
             }
+            return Task.CompletedTask;  
         }
-        public bool ExistsByName(Guid userId, string name, CancellationToken ct)
+        public Task<bool> ExistsByName(Guid userId, string name, CancellationToken ct)
         {
             var path = Path.Combine(ItemFolderName, userId.ToString());
 
@@ -74,11 +75,11 @@ namespace TaskBot.Infrastructure.DataAccess
                     var item = JsonSerializer.Deserialize<ToDoItem>(toDoItemJson);
                     if (item != null && item?.User?.UserId == userId && item.Name == name)
                     {
-                        return true;
+                        return Task.FromResult(true);
                     }
                 }
             }
-            return false;
+            return Task.FromResult(false);
         }
 
         public Task<IReadOnlyList<ToDoItem>> Find(Guid userId, Func<ToDoItem, bool> predicate, CancellationToken ct)
@@ -172,9 +173,10 @@ namespace TaskBot.Infrastructure.DataAccess
             }
             return Task.FromResult<IReadOnlyList<ToDoItem>>(toDoItemList);
         }
-        public void Update(ToDoItem item, CancellationToken ct)
+        public Task Update(ToDoItem item, CancellationToken ct)
         {
             Add(item, ct);
+            return Task.CompletedTask;
         }
     }
 }

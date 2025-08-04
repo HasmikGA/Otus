@@ -38,5 +38,11 @@ namespace TaskBot.TelegramBot.Scenarios
             this.scenarios.Remove(userId,out ScenarioContext value);
             return Task.CompletedTask;
         }
+
+        public async Task<IReadOnlyList<ScenarioContext>> GetContexts(CancellationToken ct)
+        {
+            IReadOnlyList<ScenarioContext> list = this.scenarios.Values.ToList();
+            return list;
+        }
     }
 }

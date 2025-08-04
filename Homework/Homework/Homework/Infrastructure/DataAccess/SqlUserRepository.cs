@@ -17,30 +17,30 @@ namespace TaskBot.Infrastructure.DataAccess
         {
             this.factory = factory;
         }
-        public void Add(ToDoUser user, CancellationToken ct)
+        public async Task Add(ToDoUser user, CancellationToken ct)
         {
             using (var dbContext = this.factory.CreateDataContext())
             {
                 var userModel = ModelMapper.MapToModel(user);
-                dbContext.Insert(userModel);
+                await dbContext.InsertAsync(userModel);
             }
         }
 
-        public ToDoUser? GetUser(Guid userId, CancellationToken ct)
+        public async Task <ToDoUser?> GetUser(Guid userId, CancellationToken ct)
         {
             using (var dbContext = this.factory.CreateDataContext())
             {
-                var user = dbContext.ToDoUsers.FirstOrDefault(i => i.UserId == userId);
+                var user = await dbContext.ToDoUsers.FirstOrDefaultAsync(i => i.UserId == userId);
                 return ModelMapper.MapFromModel(user);
             }
 
         }
 
-        public ToDoUser? GetUserByTelegramUserId(long telegramUserId, CancellationToken ct)
+        public async Task<ToDoUser?> GetUserByTelegramUserId(long telegramUserId, CancellationToken ct)
         {
             using (var dbContext = factory.CreateDataContext())
             {
-                var user = dbContext.ToDoUsers.FirstOrDefault(i => i.TelegramUserId == telegramUserId);
+                var user = await dbContext.ToDoUsers.FirstOrDefaultAsync(i => i.TelegramUserId == telegramUserId);
                 return ModelMapper.MapFromModel(user);
             }
         }
