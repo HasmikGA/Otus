@@ -18,123 +18,123 @@ namespace TaskBot.Infrastructure.DataAccess
         {
             this.factory = factory;
         }
-        public void Add(ToDoItem item, CancellationToken ct)
+        public async Task Add(ToDoItem item, CancellationToken ct)
         {
             using (var dbContext = factory.CreateDataContext())
             {
                 var model = ModelMapper.MapToModel(item);
-                dbContext.Insert(model);
+                await dbContext.InsertAsync(model);
             };
         }
 
-        public Task<int> CountActive(Guid userId, CancellationToken ct)
+        public async Task<int> CountActive(Guid userId, CancellationToken ct)
         {
             using (var dbContext = factory.CreateDataContext())
             {
-                var count = dbContext.ToDoItems.Count(x => x.State == 0);
-                return Task.FromResult(count);
+                var count = await dbContext.ToDoItems.CountAsync(x => x.State == 0);
+                return count;
             }
 
         }
-        public void Delete(Guid id, Guid userId, CancellationToken ct)
+        public async Task Delete(Guid id, Guid userId, CancellationToken ct)
         {
             using (var dbContext = factory.CreateDataContext())
             {
                 var models = dbContext.ToDoItems.Where(i => i.Id == id && i.UserId == userId);
-                dbContext.Delete(models);
+                await dbContext.DeleteAsync(models);
             }
         }
 
-        public bool ExistsByName(Guid userId, string name, CancellationToken ct)
+        public async Task<bool> ExistsByName(Guid userId, string name, CancellationToken ct)
         {
             using (var dbContext = factory.CreateDataContext())
             {
-                var result = dbContext.ToDoItems.Any(i => i.UserId == userId && i.Name == name);
+                var result = await dbContext.ToDoItems.AnyAsync(i => i.UserId == userId && i.Name == name);
                 return result;
             }
         }
 
-        public Task<IReadOnlyList<ToDoItem>> Find(Guid userId, Func<ToDoItem, bool> predicate, CancellationToken ct)
+        public async Task<IReadOnlyList<ToDoItem>> Find(Guid userId, Func<ToDoItem, bool> predicate, CancellationToken ct)
         {
             using (var dbContext = factory.CreateDataContext())
             {
-                var predicateModels = dbContext.ToDoItems
+                var predicateModels = await dbContext.ToDoItems
                     .LoadWith(i => i.User)
                     .LoadWith(i => i.List)
                     .Select(x => ModelMapper.MapFromModel(x))
                     .Where(i => i.User.UserId == userId && predicate(i))
-                    .ToList();
+                    .ToListAsync();
 
-                return Task.FromResult<IReadOnlyList<ToDoItem>>(predicateModels);
+                return predicateModels;
             }
         }
 
-        public Task<IReadOnlyList<ToDoItem>> GetActiveByUserId(Guid userId, CancellationToken ct)
+        public async Task<IReadOnlyList<ToDoItem>> GetActiveByUserId(Guid userId, CancellationToken ct)
         {
             using (var dbContext = factory.CreateDataContext())
             {
-                var activeModels = dbContext.ToDoItems
+                var activeModels = await dbContext.ToDoItems
                     .LoadWith(i => i.User)
                     .LoadWith(i => i.List)
                     .Where(i => i.UserId == userId && i.State == 0)
                     .Select(x => ModelMapper.MapFromModel(x))
-                    .ToList();
+                    .ToListAsync();
 
-                return Task.FromResult<IReadOnlyList<ToDoItem>>(activeModels);
+                return activeModels;
             }
         }
 
-        public Task<IReadOnlyList<ToDoItem>> GetAllByUserId(Guid userId, CancellationToken ct)
+        public async Task<IReadOnlyList<ToDoItem>> GetAllByUserId(Guid userId, CancellationToken ct)
         {
             using (var dbContext = factory.CreateDataContext())
             {
-                var allModels = dbContext.ToDoItems
+                var allModels = await dbContext.ToDoItems
                     .LoadWith(i => i.User)
                     .LoadWith(i => i.List)
                     .Where(i => i.UserId == userId)
                     .Select(x => ModelMapper.MapFromModel(x))
-                    .ToList();
+                    .ToListAsync();
 
-                return Task.FromResult<IReadOnlyList<ToDoItem>>(allModels);
+                return allModels;
             }
         }
 
-        public Task<IReadOnlyList<ToDoItem>> GetByUserIdAndList(Guid userId, Guid? listId, CancellationToken ct)
+        public async Task<IReadOnlyList<ToDoItem>> GetByUserIdAndList(Guid userId, Guid? listId, CancellationToken ct)
         {
             using (var dbContext = factory.CreateDataContext())
             {
-                var models = dbContext.ToDoItems
+                var models = await dbContext.ToDoItems
                     .LoadWith(i => i.User)
                     .LoadWith(i => i.List)
                     .Where(i => i.UserId == userId && i.ListId == listId)
                     .Select(x => ModelMapper.MapFromModel(x))
-                    .ToList();
+                    .ToListAsync();
 
-                return Task.FromResult<IReadOnlyList<ToDoItem>>(models);
+                return models;
             }
         }
 
-        public void Update(ToDoItem item, CancellationToken ct)
+        public async Task Update(ToDoItem item, CancellationToken ct)
         {
             using (var dbContext = factory.CreateDataContext())
             {
                 var model = ModelMapper.MapToModel(item);
-                dbContext.Update(model);
+               await dbContext.UpdateAsync(model);
             }
         }
 
-        private Task<IReadOnlyList<ToDoItem>> GetItems(Predicate<ToDoItem> predicate, CancellationToken ct)
+        private async Task<IReadOnlyList<ToDoItem>> GetItems(Predicate<ToDoItem> predicate, CancellationToken ct)
         {
             using (var dbContext = factory.CreateDataContext())
             {
-                var models = dbContext.ToDoItems
+                var models =await dbContext.ToDoItems
                     .LoadWith(i => i.User)
                     .LoadWith(i => i.List)
                     .Select(x => ModelMapper.MapFromModel(x))
                     .Where(x => predicate(x))
-                    .ToList();
+                    .ToListAsync();
 
-                return Task.FromResult<IReadOnlyList<ToDoItem>>(models);
+                return models;
             }
         }
     }

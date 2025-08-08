@@ -294,10 +294,13 @@ namespace TaskBot.TelegramBot
         public async Task ProcessScenario(ITelegramBotClient botClient, ScenarioContext context, Update update, CancellationToken ct)
         {
             var message = update.Type == UpdateType.CallbackQuery ? update.CallbackQuery.Message : update.Message;
+
             if (!await this.contextRepository.HasContext(message.Chat.Id, ct))
             {
                 await this.contextRepository.SetContext(message.Chat.Id, context, ct);
             }
+
+            context.Data["ChatId"] = message.Chat.Id;
 
             var scenario = GetScenario(context.CurrentScenario);
             var result = await scenario.HandleMessageAsync(botClient, context, update, ct);

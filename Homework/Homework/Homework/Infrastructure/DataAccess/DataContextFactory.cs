@@ -9,9 +9,14 @@ namespace TaskBot.Infrastructure.DataAccess
 {
     internal class DataContextFactory : IDataContextFactory<ToDoDataContext>
     {
+        private readonly string connectionString;
+        public DataContextFactory(string connectionString) 
+        {
+            this.connectionString = connectionString;
+        }
         public ToDoDataContext CreateDataContext()
         {
-            return new ToDoDataContext("Host=localhost;Port=5432;Username=postgres;Password=1234;Database=ToDoList");
+            return new ToDoDataContext(connectionString);
         }
     }
 }

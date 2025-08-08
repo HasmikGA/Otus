@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using TaskBot;
+using TaskBot.BackgroundTasks;
 using TaskBot.Core.DataAccess;
 using TaskBot.Core.Entities;
 using TaskBot.Core.Services;
@@ -26,9 +27,9 @@ namespace Homework
                 Console.WriteLine("Bot token not found. Please set the TELEGRAM_BOT_TOKEN environment variable.");
                 return;
             }
-
+            string connectionString = "Host=localhost;Port=5432;Username=postgres;Password=1234;Database=ToDoList";
             var telegramBotClinet = new TelegramBotClient(clToken);
-            var dataContextFactory = new DataContextFactory();
+            var dataContextFactory = new DataContextFactory(connectionString);
             
             IUserRepository userRepository = new SqlUserRepository(dataContextFactory);
             IToDoRepository toDoRepository = new SqlToDoRepository(dataContextFactory);
@@ -36,6 +37,9 @@ namespace Homework
             IToDoReportService toDoReportService = new ToDoReportService(toDoRepository);
             IToDoListRepository toDoListRepository = new SqlToDoListRepository(dataContextFactory);
             IToDoListService toDoListService = new ToDoListService(toDoListRepository);
+            BackgroundTaskRunner backgroundTaskRunner = new BackgroundTaskRunner();
+            backgroundTaskRunner.AddTask(new ResetScenarioBackgroundTask(TimeSpan.FromMinutes(5), contextRepository, telegramBotClinet));
+
             var userService = new UserService(userRepository);
             var toDoService = new ToDoService(20, 100, toDoRepository);
             var scenarios = new IScenario[]
@@ -59,6 +63,7 @@ namespace Homework
                 updateHandler.OnHandleUpdateStarted += OnUpdateStarted;
                 updateHandler.OnHandleUpdateCompleted += OnUpdateCompleted;
 
+                backgroundTaskRunner.StartTasks(ct);
                 telegramBotClinet.StartReceiving(updateHandler, receiverOptions, ct);
 
                 var me = await telegramBotClinet.GetMe();
@@ -69,6 +74,7 @@ namespace Homework
                     var s = Console.ReadLine();
                     if (s?.ToUpper() == "A")
                     {
+                        await backgroundTaskRunner.StopTasks(ct);
                         cancellationToken.Cancel();
                         Console.WriteLine("Bot stopped");
                         break;

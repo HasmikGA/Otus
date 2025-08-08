@@ -14,7 +14,7 @@ namespace TaskBot.Core.Services
 
         public async Task<ToDoUser>? GetUser(long telegramUserId, CancellationToken ct)
         {
-            var user = userRepository.GetUserByTelegramUserId(telegramUserId, ct);
+            var user = await userRepository.GetUserByTelegramUserId(telegramUserId, ct);
             return user;
         }
 
@@ -28,7 +28,7 @@ namespace TaskBot.Core.Services
                 RegisteredAt = DateTime.Now,
             };
 
-            userRepository.Add(user, ct);
+            await userRepository.Add(user, ct);
 
             return user;
         }
