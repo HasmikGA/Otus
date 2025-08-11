@@ -59,7 +59,7 @@ namespace TaskBot.Infrastructure.DataAccess
             {
                 File.Delete(path);
             }
-            return Task.CompletedTask;  
+            return Task.CompletedTask;
         }
         public Task<bool> ExistsByName(Guid userId, string name, CancellationToken ct)
         {
@@ -130,6 +130,30 @@ namespace TaskBot.Infrastructure.DataAccess
             return Task.FromResult<IReadOnlyList<ToDoItem>>(activetList);
         }
 
+        public Task<IReadOnlyList<ToDoItem>> GetActiveWithDeadline(Guid userId, DateTime from, DateTime to, CancellationToken ct)
+        {
+            List<ToDoItem> activeWhithDeadline = new List<ToDoItem>();
+
+            var path = Path.Combine(ItemFolderName, userId.ToString());
+
+            if (Directory.Exists(path))
+            {
+                var files = Directory.GetFiles(path);
+                for (int i = 0; i < files.Length; i++)
+                {
+                    var toDoItemJson = File.ReadAllText(files[i]);
+                    var item = JsonSerializer.Deserialize<ToDoItem>(toDoItemJson);
+                    if (item?.User?.UserId == userId && item.State == ToDoItemState.Active && item.Deadline >= from && item.Deadline < to)
+                    {
+                        activeWhithDeadline.Add(item);
+                    }
+                }
+
+            }
+
+            return Task.FromResult<IReadOnlyList<ToDoItem>>(activeWhithDeadline);
+        }
+
         public Task<IReadOnlyList<ToDoItem>> GetAllByUserId(Guid userId, CancellationToken ct)
         {
 
@@ -151,7 +175,7 @@ namespace TaskBot.Infrastructure.DataAccess
                 }
 
             }
-            return Task.FromResult<IReadOnlyList<ToDoItem>> (allList);
+            return Task.FromResult<IReadOnlyList<ToDoItem>>(allList);
         }
         public Task<IReadOnlyList<ToDoItem>> GetByUserIdAndList(Guid userId, Guid? listId, CancellationToken ct)
         {
@@ -178,5 +202,7 @@ namespace TaskBot.Infrastructure.DataAccess
             Add(item, ct);
             return Task.CompletedTask;
         }
+
+
     }
 }

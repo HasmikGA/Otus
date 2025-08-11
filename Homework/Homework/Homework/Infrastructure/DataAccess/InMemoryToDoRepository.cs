@@ -74,6 +74,19 @@ namespace TaskBot.Infrastructure.DataAccess
             return activetList;
         }
 
+        public async Task<IReadOnlyList<ToDoItem>> GetActiveWithDeadline(Guid userId, DateTime from, DateTime to, CancellationToken ct)
+        {
+            List<ToDoItem> activeWhithDeadline = new List<ToDoItem>();
+            for (int i = 0; i < toDoItems.Count; i++)
+            {
+                if (toDoItems[i].User?.UserId == userId && toDoItems[i].State == ToDoItemState.Active && toDoItems[i].Deadline >= from && toDoItems[i].Deadline < to)
+                {
+                    activeWhithDeadline.Add(toDoItems[i]);
+                }
+            }
+            return activeWhithDeadline;
+        }
+
         public async Task<IReadOnlyList<ToDoItem>> GetAllByUserId(Guid userId, CancellationToken ct)
         {
             List<ToDoItem> allList = new List<ToDoItem>();
@@ -89,7 +102,7 @@ namespace TaskBot.Infrastructure.DataAccess
         public async Task<IReadOnlyList<ToDoItem>> GetByUserIdAndList(Guid userId, Guid? listId, CancellationToken ct)
         {
             var toDoItemList = new List<ToDoItem>();
-            
+
             for (int i = 0; i < toDoItems.Count; i++)
             {
                 if (toDoItems[i].User?.UserId == userId && toDoItems[i]?.List?.Id == listId)

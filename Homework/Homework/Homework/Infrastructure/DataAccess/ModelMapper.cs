@@ -7,6 +7,7 @@ using System.Xml.Linq;
 using TaskBot.Core.DataAccess.Models;
 using TaskBot.Core.Entities;
 using Telegram.Bot.Types;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace TaskBot.Infrastructure.DataAccess
 {
@@ -104,6 +105,44 @@ namespace TaskBot.Infrastructure.DataAccess
                 Name = entity.Name,
                 UserId = entity.User.UserId,
                 CreatedAt = entity.CreatedAt
+            };
+        }
+
+        public static Notification MapFromModel(NotificationModel model)
+        {
+            if (model == null)
+            {
+                return null;
+            }
+            return new Notification()
+            {
+                Id = model.Id,
+                User = model.User != null ? model.User : null,
+                Type = model.Type,
+                Text = model.Text,
+                ScheduledAt = model.ScheduledAt,
+                IsNotified = model.IsNotified,
+                NotifiedAt = model.NotifiedAt,
+            };
+        }
+
+        public static NotificationModel MapToModel(Notification entity)
+        {
+            if (entity == null)
+            {
+                return null;
+            }
+
+            return new NotificationModel()
+            {
+                Id = entity.Id,
+                UserId = entity.User?.UserId ?? default,
+                Type = entity.Type,
+                Text = entity.Text,
+                ScheduledAt = entity.ScheduledAt,
+                IsNotified = entity.IsNotified,
+                NotifiedAt = entity.NotifiedAt ?? default,
+
             };
         }
     }

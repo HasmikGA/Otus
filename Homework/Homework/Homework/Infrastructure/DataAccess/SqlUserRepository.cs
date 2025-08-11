@@ -44,5 +44,14 @@ namespace TaskBot.Infrastructure.DataAccess
                 return ModelMapper.MapFromModel(user);
             }
         }
+
+        public async Task<IReadOnlyList<ToDoUser>> GetUsers(CancellationToken ct)
+        {
+            using (var dbContext = this.factory.CreateDataContext())
+            {
+                var users = await dbContext.ToDoUsers.Select(i => ModelMapper.MapFromModel(i)).ToListAsync();
+                return users;
+            }
+        }
     }
 }

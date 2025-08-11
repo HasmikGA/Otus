@@ -12,5 +12,6 @@ namespace TaskBot.Core.DataAccess
         Task <ToDoUser?> GetUser(Guid userId, CancellationToken ct);
         Task<ToDoUser?> GetUserByTelegramUserId(long telegramUserId, CancellationToken ct);
         Task Add(ToDoUser user, CancellationToken ct);
+        Task<IReadOnlyList<ToDoUser>> GetUsers(CancellationToken ct);
     }
 }

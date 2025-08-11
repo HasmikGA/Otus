@@ -84,6 +84,21 @@ namespace TaskBot.Infrastructure.DataAccess
             }
         }
 
+        public async Task<IReadOnlyList<ToDoItem>> GetActiveWithDeadline(Guid userId, DateTime from, DateTime to, CancellationToken ct)
+        {
+            using (var dbContext = factory.CreateDataContext())
+            {
+                var activesWhithDeadline = await dbContext.ToDoItems
+                    .LoadWith(i => i.User)
+                    .LoadWith(i => i.List)
+                    .Where(i => i.UserId == userId && i.State == 0 && i.Deadline >= from && i.Deadline < to)
+                    .Select(x => ModelMapper.MapFromModel(x))
+                    .ToListAsync();
+
+                return activesWhithDeadline;
+            }
+        }
+
         public async Task<IReadOnlyList<ToDoItem>> GetAllByUserId(Guid userId, CancellationToken ct)
         {
             using (var dbContext = factory.CreateDataContext())
@@ -119,7 +134,7 @@ namespace TaskBot.Infrastructure.DataAccess
             using (var dbContext = factory.CreateDataContext())
             {
                 var model = ModelMapper.MapToModel(item);
-               await dbContext.UpdateAsync(model);
+                await dbContext.UpdateAsync(model);
             }
         }
 
@@ -127,7 +142,7 @@ namespace TaskBot.Infrastructure.DataAccess
         {
             using (var dbContext = factory.CreateDataContext())
             {
-                var models =await dbContext.ToDoItems
+                var models = await dbContext.ToDoItems
                     .LoadWith(i => i.User)
                     .LoadWith(i => i.List)
                     .Select(x => ModelMapper.MapFromModel(x))

@@ -37,9 +37,12 @@ namespace Homework
             IToDoReportService toDoReportService = new ToDoReportService(toDoRepository);
             IToDoListRepository toDoListRepository = new SqlToDoListRepository(dataContextFactory);
             IToDoListService toDoListService = new ToDoListService(toDoListRepository);
+            INotificationService notificationService = new NotificationService(dataContextFactory);
             BackgroundTaskRunner backgroundTaskRunner = new BackgroundTaskRunner();
             backgroundTaskRunner.AddTask(new ResetScenarioBackgroundTask(TimeSpan.FromMinutes(5), contextRepository, telegramBotClinet));
-
+            backgroundTaskRunner.AddTask(new NotificationBackgroundTask(notificationService, telegramBotClinet));
+            backgroundTaskRunner.AddTask(new DeadlineBackgroundTask(notificationService, userRepository, toDoRepository));
+            backgroundTaskRunner.AddTask(new TodayBackgroundTask(notificationService, userRepository, toDoRepository));
             var userService = new UserService(userRepository);
             var toDoService = new ToDoService(20, 100, toDoRepository);
             var scenarios = new IScenario[]
