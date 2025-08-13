@@ -21,10 +21,10 @@ namespace TaskBot.Core.DataAccess.Models
         [Association(ThisKey = nameof(UserId), OtherKey = nameof(User.UserId))]
         public ToDoUser? User { get; set; }
 
-        [Column("Type")]
+        [Column("Type"),NotNull]
         public string? Type { get; set; }
 
-        [Column("Text")]
+        [Column("Text"),NotNull]
         public string? Text { get; set; }
 
         [Column("ScheduledAt"), NotNull]

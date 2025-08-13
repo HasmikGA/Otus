@@ -10,14 +10,14 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TaskBot.BackgroundTasks
 {
-    internal class TodayBackgroundTask: BackgroundTask
+    internal class TodayBackgroundTask : BackgroundTask
     {
         private readonly INotificationService notificationService;
         private readonly IUserRepository userRepository;
         private readonly IToDoRepository toDoRepository;
 
-        public TodayBackgroundTask (INotificationService notificationService, IUserRepository userRepository, IToDoRepository toDoRepository)
-            :base(TimeSpan.FromDays(1), nameof(TodayBackgroundTask))
+        public TodayBackgroundTask(INotificationService notificationService, IUserRepository userRepository, IToDoRepository toDoRepository)
+            : base(TimeSpan.FromDays(1), nameof(TodayBackgroundTask))
         {
             this.notificationService = notificationService;
             this.userRepository = userRepository;
@@ -34,20 +34,11 @@ namespace TaskBot.BackgroundTasks
             {
                 var tasks = await toDoRepository.GetActiveWithDeadline(user.UserId, today, tomorrow, ct);
                 var taskListText = string.Join("\n", tasks.Select((t, i) => $"{i + 1}. {t.Name}"));
+                var type = $"Today_{DateOnly.FromDateTime(DateTime.UtcNow)}";
 
                 foreach (var task in tasks)
                 {
-                    var notification = new Notification
-                    {
-                        Id = Guid.NewGuid(),
-                        User = user,
-                        Type = $"Today_{DateOnly.FromDateTime(DateTime.UtcNow)}",
-                        Text = taskListText,
-                        ScheduledAt = DateTime.UtcNow,
-                        IsNotified = false,
-                        NotifiedAt = null
-                    };
-
+                    await this.notificationService.ScheduleNotification(user.UserId, type, taskListText, DateTime.UtcNow, ct);
                 }
             }
         }

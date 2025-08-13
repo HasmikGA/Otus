@@ -15,10 +15,6 @@ namespace TaskBot.Infrastructure.DataAccess
     {
         public static ToDoUser MapFromModel(ToDoUserModel model)
         {
-            if (model == null)
-            {
-                return null;
-            }
             return new ToDoUser()
             {
                 UserId = model.UserId,
@@ -29,10 +25,6 @@ namespace TaskBot.Infrastructure.DataAccess
         }
         public static ToDoUserModel MapToModel(ToDoUser entity)
         {
-            if (entity == null)
-            {
-                return null;
-            }
             return new ToDoUserModel()
             {
                 UserId = entity.UserId,
@@ -43,10 +35,6 @@ namespace TaskBot.Infrastructure.DataAccess
         }
         public static ToDoItem MapFromModel(ToDoItemModel model)
         {
-            if (model == null)
-            {
-                return null;
-            }
             return new ToDoItem()
             {
                 Id = model.Id,
@@ -62,10 +50,6 @@ namespace TaskBot.Infrastructure.DataAccess
         }
         public static ToDoItemModel MapToModel(ToDoItem entity)
         {
-            if (entity == null)
-            {
-                return null;
-            }
             return new ToDoItemModel()
             {
                 Id = entity.Id,
@@ -81,10 +65,6 @@ namespace TaskBot.Infrastructure.DataAccess
 
         public static ToDoList MapFromModel(ToDoListModel model)
         {
-            if(model == null)
-            {
-                return null;
-            }
             return new ToDoList()
             {
                 Id = model.Id,
@@ -95,10 +75,6 @@ namespace TaskBot.Infrastructure.DataAccess
         }
         public static ToDoListModel MapToModel(ToDoList entity)
         {
-            if (entity == null)
-            {
-                return null;
-            }
             return new ToDoListModel()
             {
                 Id = entity.Id,
@@ -110,10 +86,6 @@ namespace TaskBot.Infrastructure.DataAccess
 
         public static Notification MapFromModel(NotificationModel model)
         {
-            if (model == null)
-            {
-                return null;
-            }
             return new Notification()
             {
                 Id = model.Id,
@@ -128,11 +100,6 @@ namespace TaskBot.Infrastructure.DataAccess
 
         public static NotificationModel MapToModel(Notification entity)
         {
-            if (entity == null)
-            {
-                return null;
-            }
-
             return new NotificationModel()
             {
                 Id = entity.Id,

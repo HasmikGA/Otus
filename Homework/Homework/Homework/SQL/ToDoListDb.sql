@@ -22,9 +22,9 @@ CREATE TABLE "ToDoItem" (
 
 CREATE TABLE "Notification" (
 "Id" UUID PRIMARY KEY,
-"UserId" UUID REFERENCES "ToDoUser" ("UserId"),
-"Type" TEXT,
-"Text" TEXT,
+"UserId" UUID REFERENCES "ToDoUser" ("UserId") NOT NUll,
+"Type" TEXT NOT NULL,
+"Text" TEXT NOT NULL,
 "ScheduledAt" TIMESTAMP NOT NULL,
 "IsNotified" BOOLEAN NOT NULL DEFAULT FALSE,
 "NotifiedAt" TIMESTAMP NOT NULL )

@@ -22,10 +22,10 @@ namespace TaskBot.Infrastructure.DataAccess
             using (var dbContext = this.factory.CreateDataContext())
             {
                 var notifications = await dbContext.Notifications
-                    .LoadWith(i=>i.User)
+                    .LoadWith(i => i.User)
                     .Where(i => i.IsNotified == false && i.ScheduledAt <= scheduledBefore)
                     .Select(i => ModelMapper.MapFromModel(i))
-                    .ToListAsync();
+                    .ToListAsync(ct);
 
                 return notifications;
             }
@@ -36,7 +36,7 @@ namespace TaskBot.Infrastructure.DataAccess
             using (var dbContext = this.factory.CreateDataContext())
             {
                 var notification = await dbContext.Notifications
-                    .FirstOrDefaultAsync(i => i.Id == notificationId);
+                    .FirstOrDefaultAsync(i => i.Id == notificationId, ct);
 
                 if (notification == null)
                 {
@@ -45,7 +45,7 @@ namespace TaskBot.Infrastructure.DataAccess
 
                 notification.IsNotified = true;
 
-                await dbContext.UpdateAsync(notification);
+                await dbContext.UpdateAsync(notification, token: ct);
             }
         }
 
@@ -59,7 +59,7 @@ namespace TaskBot.Infrastructure.DataAccess
                     return false;
                 }
 
-                var userModel = await dbContext.ToDoUsers.FirstOrDefaultAsync(i => i.UserId == userId);
+                var userModel = await dbContext.ToDoUsers.FirstOrDefaultAsync(i => i.UserId == userId,ct);
                 var user = ModelMapper.MapFromModel(userModel);
                 var notification = new Notification
                 {
@@ -72,7 +72,7 @@ namespace TaskBot.Infrastructure.DataAccess
                     NotifiedAt = DateTime.UtcNow,
                 };
 
-                await dbContext.InsertAsync(notification);
+                await dbContext.InsertAsync(notification,token:ct);
 
                 return true;
             }
