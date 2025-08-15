@@ -20,6 +20,16 @@ CREATE TABLE "ToDoItem" (
 "Deadline" TIMESTAMP NOT NULL,
 "ListId" UUID REFERENCES "ToDoList" ("Id") )
 
+CREATE TABLE "Notification" (
+"Id" UUID PRIMARY KEY,
+"UserId" UUID REFERENCES "ToDoUser" ("UserId") NOT NUll,
+"Type" TEXT NOT NULL,
+"Text" TEXT NOT NULL,
+"ScheduledAt" TIMESTAMP NOT NULL,
+"IsNotified" BOOLEAN NOT NULL DEFAULT FALSE,
+"NotifiedAt" TIMESTAMP NOT NULL )
+
+
 CREATE UNIQUE INDEX "Ix_ToDoUser_TelegramUserId"
 ON "ToDoUser"("TelegramUserId")
 
@@ -31,3 +41,6 @@ ON "ToDoItem"("UserId")
 
 CREATE INDEX "Ix_ToDoList_UserId"
 ON "ToDoList"("UserId")
+
+CREATE INDEX "Ix_Notification_UserId"
+On "Notification"("UserId")

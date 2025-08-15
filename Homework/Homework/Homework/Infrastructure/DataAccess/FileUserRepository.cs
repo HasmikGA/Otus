@@ -75,5 +75,25 @@ namespace TaskBot.Infrastructure.DataAccess
 
             return null;
         }
+
+        public Task<IReadOnlyList<ToDoUser>> GetUsers(CancellationToken ct)
+        {
+            var allUsers = new List<ToDoUser>();
+
+            var path = Path.Combine(UserFolderName);
+            if (Directory.Exists(path))
+            {
+                var users = Directory.GetFiles(path);
+
+                for (int i = 0; i < users.Length; i++)
+                {
+                    var toDoUserJson = File.ReadAllText(users[i]);
+                    var user = JsonSerializer.Deserialize<ToDoUser>(toDoUserJson);
+                    allUsers.Add(user);
+                }
+            }
+
+            return Task.FromResult((IReadOnlyList<ToDoUser>)allUsers);
+        }
     }
 }
